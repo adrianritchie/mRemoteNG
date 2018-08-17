@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using mRemoteNG.Connection.Protocol;
 using mRemoteNG.Connection.Protocol.Http;
-using mRemoteNG.Connection.Protocol.ICA;
+//using mRemoteNG.Connection.Protocol.ICA;
 using mRemoteNG.Connection.Protocol.RDP;
 using mRemoteNG.Connection.Protocol.VNC;
 using mRemoteNG.Tools;
@@ -27,7 +27,7 @@ namespace mRemoteNG.Connection
         private string _extApp;
         private int _port;
         private string _puttySession;
-        private ProtocolICA.EncryptionStrength _icaEncryption;
+        //private ProtocolICA.EncryptionStrength _icaEncryption;
         private bool _useConsoleSession;
         private ProtocolRDP.AuthenticationLevel _rdpAuthenticationLevel;
         private int _rdpMinutesToIdleTimeout;
@@ -197,15 +197,15 @@ namespace mRemoteNG.Connection
             set { SetField(ref _puttySession, value, "PuttySession"); }
         }
 
-        [LocalizedAttributes.LocalizedCategory("strCategoryProtocol", 3),
-            LocalizedAttributes.LocalizedDisplayName("strPropertyNameEncryptionStrength"),
-            LocalizedAttributes.LocalizedDescription("strPropertyDescriptionEncryptionStrength"),
-            TypeConverter(typeof(MiscTools.EnumTypeConverter))]
-        public ProtocolICA.EncryptionStrength ICAEncryptionStrength
-        {
-            get { return GetPropertyValue("ICAEncryptionStrength", _icaEncryption); }
-            set { SetField(ref _icaEncryption, value, "ICAEncryptionStrength"); }
-        }
+        //[LocalizedAttributes.LocalizedCategory("strCategoryProtocol", 3),
+        //    LocalizedAttributes.LocalizedDisplayName("strPropertyNameEncryptionStrength"),
+        //    LocalizedAttributes.LocalizedDescription("strPropertyDescriptionEncryptionStrength"),
+        //    TypeConverter(typeof(MiscTools.EnumTypeConverter))]
+        //public ProtocolICA.EncryptionStrength ICAEncryptionStrength
+        //{
+        //    get { return GetPropertyValue("ICAEncryptionStrength", _icaEncryption); }
+        //    set { SetField(ref _icaEncryption, value, "ICAEncryptionStrength"); }
+        //}
 
         [LocalizedAttributes.LocalizedCategory("strCategoryProtocol", 3),
             LocalizedAttributes.LocalizedDisplayName("strPropertyNameUseConsoleSession"),

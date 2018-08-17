@@ -38,6 +38,8 @@ namespace mRemoteNG.UI.Window
                 formText = Language.strNewPanel;
             }
 
+            MaximizeBox = panel.MaximizeBox;
+            ShowInTaskbar = panel.ShowInTaskbar;
             WindowType = WindowType.Connection;
             DockPnl = panel;
             InitializeComponent();
@@ -184,6 +186,11 @@ namespace mRemoteNG.UI.Window
                 }
                 DockHandler.FloatPane.FloatWindow.ResizeBegin += Connection_ResizeBegin;
                 DockHandler.FloatPane.FloatWindow.ResizeEnd += Connection_ResizeEnd;
+                DockHandler.FloatPane.FloatWindow.MaximizeBox = this.MaximizeBox;
+                DockHandler.FloatPane.FloatWindow.FormBorderStyle = FormBorderStyle.Sizable;
+                DockHandler.FloatPane.FloatWindow.ShowInTaskbar = true;
+                DockHandler.FloatPane.FloatWindow.Owner = null;
+                
                 _floatHandlersAdded = true;
             }
             else if (DockState == DockState.Document)
@@ -192,8 +199,10 @@ namespace mRemoteNG.UI.Window
                 {
                     DockHandler.FloatPane.FloatWindow.ResizeBegin -= Connection_ResizeBegin;
                     DockHandler.FloatPane.FloatWindow.ResizeEnd -= Connection_ResizeEnd;
+                    DockHandler.FloatPane.FloatWindow.ShowInTaskbar = false;
                     _floatHandlersAdded = false;
                 }
+
                 frmMain.Default.ResizeBegin += Connection_ResizeBegin;
                 frmMain.Default.ResizeEnd += Connection_ResizeEnd;
                 _documentHandlersAdded = true;
@@ -842,7 +851,7 @@ namespace mRemoteNG.UI.Window
         {
             try
             {
-                if (m.Msg == NativeMethods.WM_MOUSEACTIVATE)
+                if (m.Msg == NativeMethods.WM_MOUSEACTIVATE || m.Msg == NativeMethods.WM_MOUSEMOVE)
                 {
                     var selectedTab = TabController.SelectedTab;
                     if (selectedTab == null) return;

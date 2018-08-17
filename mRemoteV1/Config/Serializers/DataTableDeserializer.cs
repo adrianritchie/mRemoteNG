@@ -6,7 +6,7 @@ using mRemoteNG.App;
 using mRemoteNG.Connection;
 using mRemoteNG.Connection.Protocol;
 using mRemoteNG.Connection.Protocol.Http;
-using mRemoteNG.Connection.Protocol.ICA;
+//using mRemoteNG.Connection.Protocol.ICA;
 using mRemoteNG.Connection.Protocol.RDP;
 using mRemoteNG.Connection.Protocol.VNC;
 using mRemoteNG.Container;
@@ -97,7 +97,7 @@ namespace mRemoteNG.Config.Serializers
             connectionInfo.UseConsoleSession = (bool)dataRow["ConnectToConsole"];
             connectionInfo.UseCredSsp = (bool)dataRow["UseCredSsp"];
             connectionInfo.RenderingEngine = (HTTPBase.RenderingEngine)Enum.Parse(typeof(HTTPBase.RenderingEngine), (string)dataRow["RenderingEngine"]);
-            connectionInfo.ICAEncryptionStrength = (ProtocolICA.EncryptionStrength)Enum.Parse(typeof(ProtocolICA.EncryptionStrength), (string)dataRow["ICAEncryptionStrength"]);
+            //connectionInfo.ICAEncryptionStrength = (ProtocolICA.EncryptionStrength)Enum.Parse(typeof(ProtocolICA.EncryptionStrength), (string)dataRow["ICAEncryptionStrength"]);
             connectionInfo.RDPAuthenticationLevel = (ProtocolRDP.AuthenticationLevel)Enum.Parse(typeof(ProtocolRDP.AuthenticationLevel), (string)dataRow["RDPAuthenticationLevel"]);
             connectionInfo.RDPMinutesToIdleTimeout = (int)dataRow["RDPMinutesToIdleTimeout"];
             connectionInfo.RDPAlertIdleTimeout = (bool)dataRow["RDPAlertIdleTimeout"];

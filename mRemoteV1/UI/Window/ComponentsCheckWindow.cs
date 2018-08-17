@@ -6,7 +6,7 @@ using System.IO;
 using mRemoteNG.App;
 using System.Threading;
 using AxMSTSCLib;
-using AxWFICALib;
+//using AxWFICALib;
 using Gecko;
 using mRemoteNG.App.Info;
 using mRemoteNG.Connection.Protocol.RDP;
@@ -575,16 +575,16 @@ namespace mRemoteNG.UI.Window
             
             try
             {
-                using (var ica = new AxICAClient())
-                {
-                    ica.Parent = this;
+                //using (var ica = new AxICAClient())
+                //{
+                //    ica.Parent = this;
 
-                    pbCheck4.Image = Resources.Good_Symbol;
-                    lblCheck4.ForeColor = Color.DarkOliveGreen;
-                    lblCheck4.Text = @"ICA (Citrix ICA) " + Language.strCcCheckSucceeded;
-                    txtCheck4.Text = string.Format(Language.strCcICAOK, ica.Version);
-                    Runtime.MessageCollector.AddMessage(MessageClass.InformationMsg, "ICA installed", true);
-                }
+                //    pbCheck4.Image = Resources.Good_Symbol;
+                //    lblCheck4.ForeColor = Color.DarkOliveGreen;
+                //    lblCheck4.Text = @"ICA (Citrix ICA) " + Language.strCcCheckSucceeded;
+                //    txtCheck4.Text = string.Format(Language.strCcICAOK, ica.Version);
+                //    Runtime.MessageCollector.AddMessage(MessageClass.InformationMsg, "ICA installed", true);
+                //}
             }
             catch (Exception ex)
             {

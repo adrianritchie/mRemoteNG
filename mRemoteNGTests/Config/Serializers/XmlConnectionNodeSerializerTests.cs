@@ -157,7 +157,7 @@ namespace mRemoteNGTests.Config.Serializers
                     yield return new TestCaseData("ConnectToConsole", ConnectionInfo.UseConsoleSession.ToString(), ConnectionInfo);
                     yield return new TestCaseData("UseCredSsp", ConnectionInfo.UseCredSsp.ToString(), ConnectionInfo);
                     yield return new TestCaseData("RenderingEngine", ConnectionInfo.RenderingEngine.ToString(), ConnectionInfo);
-                    yield return new TestCaseData("ICAEncryptionStrength", ConnectionInfo.ICAEncryptionStrength.ToString(), ConnectionInfo);
+                    //yield return new TestCaseData("ICAEncryptionStrength", ConnectionInfo.ICAEncryptionStrength.ToString(), ConnectionInfo);
                     yield return new TestCaseData("RDPAuthenticationLevel", ConnectionInfo.RDPAuthenticationLevel.ToString(), ConnectionInfo);
                     yield return new TestCaseData("LoadBalanceInfo", ConnectionInfo.LoadBalanceInfo, ConnectionInfo);
                     yield return new TestCaseData("Colors", ConnectionInfo.Colors.ToString(), ConnectionInfo);

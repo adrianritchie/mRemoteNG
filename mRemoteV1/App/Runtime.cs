@@ -52,7 +52,7 @@ namespace mRemoteNG.App
         {
             try
             {
-                var connectionForm = new ConnectionWindow(new DockContent());
+                var connectionForm = new ConnectionWindow(new DockContent() { MaximizeBox = true, ShowInTaskbar = true });
                 BuildConnectionWindowContextMenu(connectionForm);
                 SetConnectionWindowTitle(title, connectionForm);
                 ShowConnectionWindow(connectionForm);
