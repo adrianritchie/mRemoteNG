@@ -53,10 +53,15 @@ namespace mRemoteNG.Config.Putty
 		    {
 		        PuttySession = sessionName,
 		        Name = sessionName,
-		        Hostname = sessionKey.GetValue("HostName").ToString(),
-		        Username = sessionKey.GetValue("UserName").ToString()
+		        Hostname = sessionKey.GetValue("HostName")?.ToString() ?? "",
+		        Username = sessionKey.GetValue("UserName")?.ToString() ?? ""
 		    };
-		    var protocol = string.IsNullOrEmpty(sessionKey.GetValue("Protocol").ToString()) ? sessionKey.GetValue("Protocol").ToString() : "ssh";
+
+
+		    var protocol = string.IsNullOrEmpty(sessionKey.GetValue("Protocol")?.ToString())
+		        ? "ssh"
+                : sessionKey.GetValue("Protocol").ToString();
+
 		    switch (protocol.ToLowerInvariant())
 			{
 				case "raw":
@@ -68,7 +73,7 @@ namespace mRemoteNG.Config.Putty
 				case "serial":
 					return null;
 				case "ssh":
-				    int.TryParse(sessionKey.GetValue("SshProt").ToString(), out var sshVersion);
+				    int.TryParse(sessionKey.GetValue("SshProt")?.ToString(), out var sshVersion);
                     /* Per PUTTY.H in PuTTYNG & PuTTYNG Upstream (PuTTY proper currently)
                      * expect 0 for SSH1, 3 for SSH2 ONLY
                      * 1 for SSH1 with a 2 fallback

@@ -233,6 +233,12 @@ namespace mRemoteNG.Config.Serializers.Csv
                 if (bool.TryParse(connectionCsv[headers.IndexOf("RedirectPrinters")], out value))
                     connectionRecord.RedirectPrinters = value;
             }
+            if (headers.Contains("RedirectClipboard"))
+            {
+                bool value;
+                if (bool.TryParse(connectionCsv[headers.IndexOf("RedirectClipboard")], out value))
+                    connectionRecord.RedirectClipboard = value;
+            }
 
             if (headers.Contains("RedirectSmartCards"))
             {
@@ -450,6 +456,13 @@ namespace mRemoteNG.Config.Serializers.Csv
                 bool value;
                 if (bool.TryParse(connectionCsv[headers.IndexOf("InheritRedirectPrinters")], out value))
                     connectionRecord.Inheritance.RedirectPrinters = value;
+            }
+
+            if (headers.Contains("InheritRedirectClipboard"))
+            {
+                bool value;
+                if (bool.TryParse(connectionCsv[headers.IndexOf("InheritRedirectClipboard")], out value))
+                    connectionRecord.Inheritance.RedirectClipboard = value;
             }
 
             if (headers.Contains("InheritRedirectSmartCards"))

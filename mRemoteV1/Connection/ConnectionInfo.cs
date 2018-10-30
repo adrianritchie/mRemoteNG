@@ -1,6 +1,7 @@
 using mRemoteNG.App;
 using mRemoteNG.Connection.Protocol;
 using mRemoteNG.Connection.Protocol.Http;
+using mRemoteNG.Connection.Protocol.ICA;
 using mRemoteNG.Connection.Protocol.RAW;
 using mRemoteNG.Connection.Protocol.RDP;
 using mRemoteNG.Connection.Protocol.Rlogin;
@@ -172,8 +173,11 @@ namespace mRemoteNG.Connection
             if (!ShouldThisPropertyBeInherited(propertyName))
                 return value;
 
-            var inheritedValue = GetInheritedPropertyValue<TPropertyType>(propertyName);
-            return inheritedValue.Equals(default(TPropertyType)) ? value : inheritedValue;
+            var couldGetInheritedValue = TryGetInheritedPropertyValue<TPropertyType>(propertyName, out var inheritedValue);
+
+            return couldGetInheritedValue
+                ? inheritedValue
+                : value;
         }
 
 	    private bool ShouldThisPropertyBeInherited(string propertyName)
@@ -239,8 +243,8 @@ namespace mRemoteNG.Connection
                         return (int)ProtocolHTTP.Defaults.Port;
                     case ProtocolType.HTTPS:
                         return (int)ProtocolHTTPS.Defaults.Port;
-                    //case ProtocolType.ICA:
-                    //    return (int)IcaProtocol.Defaults.Port;
+                    case ProtocolType.ICA:
+                        return (int)IcaProtocol.Defaults.Port;
                     case ProtocolType.IntApp:
                         return (int)IntegratedProgram.Defaults.Port;
                 }
@@ -272,7 +276,7 @@ namespace mRemoteNG.Connection
             ExtApp = Settings.Default.ConDefaultExtApp;
             Port = 0;
             PuttySession = Settings.Default.ConDefaultPuttySession;
-            //ICAEncryptionStrength = (IcaProtocol.EncryptionStrength) Enum.Parse(typeof(IcaProtocol.EncryptionStrength), Settings.Default.ConDefaultICAEncryptionStrength);
+            ICAEncryptionStrength = (IcaProtocol.EncryptionStrength) Enum.Parse(typeof(IcaProtocol.EncryptionStrength), Settings.Default.ConDefaultICAEncryptionStrength);
             UseConsoleSession = Settings.Default.ConDefaultUseConsoleSession;
             RDPAuthenticationLevel = (RdpProtocol.AuthenticationLevel) Enum.Parse(typeof(RdpProtocol.AuthenticationLevel), Settings.Default.ConDefaultRDPAuthenticationLevel);
             RDPMinutesToIdleTimeout = Settings.Default.ConDefaultRDPMinutesToIdleTimeout;
@@ -309,9 +313,10 @@ namespace mRemoteNG.Connection
             RedirectKeys = Settings.Default.ConDefaultRedirectKeys;
             RedirectDiskDrives = Settings.Default.ConDefaultRedirectDiskDrives;
             RedirectPrinters = Settings.Default.ConDefaultRedirectPrinters;
+            RedirectClipboard = Settings.Default.ConDefaultRedirectClipboard;
             RedirectPorts = Settings.Default.ConDefaultRedirectPorts;
             RedirectSmartCards = Settings.Default.ConDefaultRedirectSmartCards;
-            RedirectSound = (RdpProtocol.RDPSounds) Enum.Parse(typeof(RdpProtocol.RDPSounds), Settings.Default.ConDefaultRedirectSound);
+            RedirectSound = (RdpProtocol.RDPSounds) Enum.Parse(typeof(RdpProtocol.RDPSounds), Settings.Default.ConDefaultRedirectSound);            
             SoundQuality = (RdpProtocol.RDPSoundQuality)Enum.Parse(typeof(RdpProtocol.RDPSoundQuality), Settings.Default.ConDefaultSoundQuality);
         }
 

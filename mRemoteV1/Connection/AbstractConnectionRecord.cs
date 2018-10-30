@@ -56,6 +56,7 @@ namespace mRemoteNG.Connection
         private bool _redirectKeys;
         private bool _redirectDiskDrives;
         private bool _redirectPrinters;
+        private bool _redirectClipboard;
         private bool _redirectPorts;
         private bool _redirectSmartCards;
         private RdpProtocol.RDPSounds _redirectSound;
@@ -452,6 +453,16 @@ namespace mRemoteNG.Connection
         {
             get => GetPropertyValue("RedirectPrinters", _redirectPrinters);
             set => SetField(ref _redirectPrinters, value, "RedirectPrinters");
+        }
+
+        [LocalizedAttributes.LocalizedCategory("strCategoryRedirect", 6),
+            LocalizedAttributes.LocalizedDisplayName("strPropertyNameRedirectClipboard"),
+            LocalizedAttributes.LocalizedDescription("strPropertyDescriptionRedirectClipboard"),
+            TypeConverter(typeof(MiscTools.YesNoTypeConverter))]
+        public bool RedirectClipboard
+        {
+            get { return GetPropertyValue("RedirectClipboard", _redirectClipboard); }
+            set { SetField(ref _redirectClipboard, value, "RedirectClipboard"); }
         }
 
         [LocalizedAttributes.LocalizedCategory("strCategoryRedirect", 6),
