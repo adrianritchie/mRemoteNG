@@ -172,11 +172,8 @@ namespace mRemoteNG.Connection
             if (!ShouldThisPropertyBeInherited(propertyName))
                 return value;
 
-            var couldGetInheritedValue = TryGetInheritedPropertyValue<TPropertyType>(propertyName, out var inheritedValue);
-
-            return couldGetInheritedValue
-                ? inheritedValue
-                : value;
+            var inheritedValue = GetInheritedPropertyValue<TPropertyType>(propertyName);
+            return inheritedValue.Equals(default(TPropertyType)) ? value : inheritedValue;
         }
 
 	    private bool ShouldThisPropertyBeInherited(string propertyName)
