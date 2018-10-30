@@ -1,14 +1,14 @@
-using Microsoft.Win32;
-using mRemoteNG.App;
-using mRemoteNG.Messages;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Security.AccessControl;
+using Microsoft.Win32;
+using mRemoteNG.App;
 
 namespace mRemoteNG.Tools
 {
-    public class IeBrowserEmulation
+	public class IeBrowserEmulation
     {
         // found this here:
         // http://www.neowin.net/forum/topic/1077469-vbnet-webbrowser-control-does-not-load-javascript/#comment-596755046
@@ -18,36 +18,40 @@ namespace mRemoteNG.Tools
 
             if (Environment.Is64BitOperatingSystem)
             {
-                using (RegistryKey key = Registry.CurrentUser.CreateSubKey(string.Concat("Software\\Wow6432Node\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\", feature), RegistryKeyPermissionCheck.ReadWriteSubTree))
+                using (var key = Registry.CurrentUser.CreateSubKey(string.Concat("Software\\Wow6432Node\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\", feature), RegistryKeyPermissionCheck.ReadWriteSubTree))
                 {
                     key?.SetValue(appName, value, RegistryValueKind.DWord);
                 }
             }
 
 
-            using (RegistryKey key = Registry.CurrentUser.CreateSubKey(string.Concat("Software\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\", feature), RegistryKeyPermissionCheck.ReadWriteSubTree))
+            using (var key = Registry.CurrentUser.CreateSubKey(string.Concat("Software\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\", feature), RegistryKeyPermissionCheck.ReadWriteSubTree))
             {
                 key?.SetValue(appName, value, RegistryValueKind.DWord);
             }
         }
 
+#if PORTABLE
         private static void DeleteBrowserFeatureControlKey(string feature, string appName)
         {
 
             if (Environment.Is64BitOperatingSystem)
             {
-                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(string.Concat("Software\\Wow6432Node\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\", feature), RegistryKeyPermissionCheck.ReadWriteSubTree))
+                using (var key = Registry.CurrentUser.OpenSubKey(string.Concat("Software\\Wow6432Node\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\", feature), RegistryKeyPermissionCheck.ReadWriteSubTree))
                 {
-                    key?.DeleteValue(appName);
+                    if (key?.GetValueNames().Contains(appName) ?? false)
+                        key.DeleteValue(appName);
                 }
             }
 
 
-            using (RegistryKey key = Registry.CurrentUser.CreateSubKey(string.Concat("Software\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\", feature), RegistryKeyPermissionCheck.ReadWriteSubTree))
+            using (var key = Registry.CurrentUser.CreateSubKey(string.Concat("Software\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\", feature), RegistryKeyPermissionCheck.ReadWriteSubTree))
             {
-                key?.DeleteValue(appName);
+                if (key?.GetValueNames().Contains(appName) ?? false)
+                    key.DeleteValue(appName);
             }
         }
+#endif
 
         private static void SetBrowserFeatureControl()
         {
@@ -56,7 +60,7 @@ namespace mRemoteNG.Tools
             // FeatureControl settings are per-process
             var fileName = Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName);
 
-            // make the control is not running inside Visual Studio Designer
+            // make sure the control is not running inside Visual Studio Designer
             if (string.Compare(fileName, "devenv.exe", StringComparison.OrdinalIgnoreCase) == 0 || string.Compare(fileName, "XDesProc.exe", StringComparison.OrdinalIgnoreCase) == 0)
             {
                 return;
@@ -89,6 +93,7 @@ namespace mRemoteNG.Tools
             SetBrowserFeatureControlKey("FEATURE_XMLHTTP", fileName, 1);
         }
 
+#if PORTABLE
         private static void DeleteBrowserFeatureControl()
         {
             // http://msdn.microsoft.com/en-us/library/ee330720(v=vs.85).aspx
@@ -96,7 +101,7 @@ namespace mRemoteNG.Tools
             // FeatureControl settings are per-process
             var fileName = Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName);
 
-            // make the control is not running inside Visual Studio Designer
+            // make sure the control is not running inside Visual Studio Designer
             if (string.Compare(fileName, "devenv.exe", StringComparison.OrdinalIgnoreCase) == 0 || string.Compare(fileName, "XDesProc.exe", StringComparison.OrdinalIgnoreCase) == 0)
             {
                 return;
@@ -128,6 +133,7 @@ namespace mRemoteNG.Tools
             DeleteBrowserFeatureControlKey("FEATURE_WINDOW_RESTRICTIONS", fileName);
             DeleteBrowserFeatureControlKey("FEATURE_XMLHTTP", fileName);
         }
+#endif
 
         private static uint GetBrowserEmulationMode()
         {
@@ -136,7 +142,7 @@ namespace mRemoteNG.Tools
             var browserVersion = 9;
             // default to IE9.
 
-            using (RegistryKey ieKey = Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\Internet Explorer", RegistryKeyPermissionCheck.ReadSubTree, RegistryRights.QueryValues))
+            using (var ieKey = Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\Internet Explorer", RegistryKeyPermissionCheck.ReadSubTree, RegistryRights.QueryValues))
             {
                 if (ieKey != null)
                 {
@@ -202,7 +208,7 @@ namespace mRemoteNG.Tools
             }
             catch (Exception ex)
             {
-                Runtime.MessageCollector?.AddExceptionMessage("IeBrowserEmulation.Register() failed.", ex, MessageClass.ErrorMsg, true);
+                Runtime.MessageCollector?.AddExceptionMessage("IeBrowserEmulation.Register() failed.", ex);
             }
         }
 
@@ -216,7 +222,7 @@ namespace mRemoteNG.Tools
             }
             catch (Exception ex)
             {
-                Runtime.MessageCollector?.AddExceptionMessage("IeBrowserEmulation.Unregister() failed.", ex, MessageClass.ErrorMsg, true);
+                Runtime.MessageCollector?.AddExceptionMessage("IeBrowserEmulation.Unregister() failed.", ex);
             }
 #endif
         }

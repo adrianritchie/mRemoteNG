@@ -5,16 +5,17 @@ using mRemoteNG.Tools;
 
 namespace mRemoteNG.UI.Forms.OptionsPages
 {
-    public partial class AppearancePage
+    public sealed partial class AppearancePage
     {
         public AppearancePage()
         {
             InitializeComponent();
+            ApplyTheme();
         }
 
         public override string PageName
         {
-            get { return Language.strTabAppearance; }
+            get => Language.strTabAppearance;
             set { }
         }
 
@@ -73,7 +74,7 @@ namespace mRemoteNG.UI.Forms.OptionsPages
 
             Settings.Default.ShowDescriptionTooltipsInTree = chkShowDescriptionTooltipsInTree.Checked;
             Settings.Default.ShowCompleteConsPathInTitle = chkShowFullConnectionsFilePathInTitle.Checked;
-            frmMain.Default.ShowFullPathInTitle = chkShowFullConnectionsFilePathInTitle.Checked;
+            FrmMain.Default.ShowFullPathInTitle = chkShowFullConnectionsFilePathInTitle.Checked;
 
             Settings.Default.ShowSystemTrayIcon = chkShowSystemTrayIcon.Checked;
             if (Settings.Default.ShowSystemTrayIcon)

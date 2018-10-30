@@ -9,18 +9,19 @@ using mRemoteNG.Tools;
 
 namespace mRemoteNG.UI.Forms.OptionsPages
 {
-    public partial class AdvancedPage
+    public sealed partial class AdvancedPage
     {
         public AdvancedPage()
         {
             InitializeComponent();
+            ApplyTheme();
         }
 
         #region Public Methods
 
         public override string PageName
         {
-            get { return Language.strTabAdvanced; }
+            get => Language.strTabAdvanced;
             set { }
         }
 
@@ -31,12 +32,12 @@ namespace mRemoteNG.UI.Forms.OptionsPages
             lblSeconds.Text = Language.strLabelSeconds;
             lblMaximumPuttyWaitTime.Text = Language.strLabelPuttyTimeout;
             chkAutomaticReconnect.Text = Language.strCheckboxAutomaticReconnect;
+            chkLoadBalanceInfoUseUtf8.Text = Language.strLoadBalanceInfoUseUtf8;
             lblConfigurePuttySessions.Text = Language.strLabelPuttySessionsConfig;
             btnLaunchPutty.Text = Language.strButtonLaunchPutty;
             btnBrowseCustomPuttyPath.Text = Language.strButtonBrowse;
             chkUseCustomPuttyPath.Text = Language.strCheckboxPuttyPath;
             chkAutomaticallyGetSessionInfo.Text = Language.strAutomaticallyGetSessionInfo;
-            chkWriteLogFile.Text = Language.strWriteLogFile;
             lblUVNCSCPort.Text = Language.strUltraVNCSCListeningPort;
         }
 
@@ -44,10 +45,9 @@ namespace mRemoteNG.UI.Forms.OptionsPages
         {
             base.SaveSettings();
 
-            chkWriteLogFile.Checked = Settings.Default.WriteLogFile;
-
             chkAutomaticallyGetSessionInfo.Checked = Settings.Default.AutomaticallyGetSessionInfo;
             chkAutomaticReconnect.Checked = Settings.Default.ReconnectOnDisconnect;
+            chkLoadBalanceInfoUseUtf8.Checked = Settings.Default.RdpLoadBalanceInfoUseUtf8;
             numPuttyWaitTime.Value = Settings.Default.MaxPuttyWaitTime;
 
             chkUseCustomPuttyPath.Checked = Settings.Default.UseCustomPuttyPath;
@@ -59,9 +59,9 @@ namespace mRemoteNG.UI.Forms.OptionsPages
 
         public override void SaveSettings()
         {
-            Settings.Default.WriteLogFile = chkWriteLogFile.Checked;
             Settings.Default.AutomaticallyGetSessionInfo = chkAutomaticallyGetSessionInfo.Checked;
             Settings.Default.ReconnectOnDisconnect = chkAutomaticReconnect.Checked;
+            Settings.Default.RdpLoadBalanceInfoUseUtf8 = chkLoadBalanceInfoUseUtf8.Checked;
 
             var puttyPathChanged = false;
             if (Settings.Default.CustomPuttyPath != txtCustomPuttyPath.Text)
@@ -108,16 +108,14 @@ namespace mRemoteNG.UI.Forms.OptionsPages
         {
             using (var openFileDialog = new OpenFileDialog())
             {
-                openFileDialog.Filter = $"{Language.strFilterApplication}|*.exe|{Language.strFilterAll}|*.*";
+                openFileDialog.Filter = $@"{Language.strFilterApplication}|*.exe|{Language.strFilterAll}|*.*";
                 openFileDialog.FileName = Path.GetFileName(GeneralAppInfo.PuttyPath);
                 openFileDialog.CheckFileExists = true;
                 openFileDialog.Multiselect = false;
 
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    txtCustomPuttyPath.Text = openFileDialog.FileName;
-                    SetPuttyLaunchButtonEnabled();
-                }
+                if (openFileDialog.ShowDialog() != DialogResult.OK) return;
+                txtCustomPuttyPath.Text = openFileDialog.FileName;
+                SetPuttyLaunchButtonEnabled();
             }
         }
 
@@ -136,7 +134,7 @@ namespace mRemoteNG.UI.Forms.OptionsPages
             {
                 MessageBox.Show(Language.strErrorCouldNotLaunchPutty, Application.ProductName,
                                 MessageBoxButtons.OK, MessageBoxIcon.Exclamation, MessageBoxDefaultButton.Button1);
-                Runtime.MessageCollector.AddExceptionMessage(Language.strErrorCouldNotLaunchPutty, ex, logOnly: true);
+                Runtime.MessageCollector.AddExceptionMessage(Language.strErrorCouldNotLaunchPutty, ex);
             }
         }
 

@@ -5,6 +5,7 @@
 using System;
 using System.Windows.Forms;
 using System.Drawing;
+using mRemoteNG.UI.Controls.Base;
 
 namespace mRemoteNG.UI.Forms.Input
 {
@@ -13,10 +14,10 @@ namespace mRemoteNG.UI.Forms.Input
         public static DialogResult InputBox(string title, string promptText, ref string value)
         {
             var form = new Form();
-            var label = new Label();
-            var textBox = new TextBox();
-            var buttonOk = new Button();
-            var buttonCancel = new Button();
+            var label = new NGLabel();
+            var textBox = new NGTextBox();
+            var buttonOk = new NGButton();
+            var buttonCancel = new NGButton();
 
             label.Text = promptText;
             label.AutoSize = true;
@@ -27,13 +28,13 @@ namespace mRemoteNG.UI.Forms.Input
             textBox.Anchor = textBox.Anchor | AnchorStyles.Right;
             textBox.SetBounds(12, 36, 372, 20);
 
-            buttonOk.Text = "OK";
+            buttonOk.Text = Language.strButtonOK;
             buttonOk.DialogResult = DialogResult.OK;
             buttonOk.FlatStyle = FlatStyle.Flat;
             buttonOk.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             buttonOk.SetBounds(228, 72, 75, 23);
 
-            buttonCancel.Text = "Cancel";
+            buttonCancel.Text = Language.strButtonCancel;
             buttonCancel.DialogResult = DialogResult.Cancel;
             buttonCancel.FlatStyle = FlatStyle.Flat;
             buttonCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
@@ -49,6 +50,8 @@ namespace mRemoteNG.UI.Forms.Input
             form.MaximizeBox = false;
             form.AcceptButton = buttonOk;
             form.CancelButton = buttonCancel;
+            form.BackColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Background");
+            form.ForeColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Foreground");
 
             var dialogResult = form.ShowDialog();
             value = textBox.Text;

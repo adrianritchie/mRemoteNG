@@ -10,7 +10,7 @@ using mRemoteNG.Tree;
 
 namespace mRemoteNG.Tools
 {
-    public class ConnectionsTreeToMenuItemsConverter
+	public class ConnectionsTreeToMenuItemsConverter
     {
         public MouseEventHandler MouseUpEventHandler { get; set; }
 

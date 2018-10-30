@@ -55,7 +55,7 @@ namespace mRemoteNG.UI.Controls
             _connectionTree = connectionTree;
             _connectionInitiator = new ConnectionInitiator();
             InitializeComponent();
-            ApplyLanguage();
+            ApplyLanguage(); 
             EnableShortcutKeys();
             Opening += (sender, args) =>
             {
@@ -566,7 +566,7 @@ namespace mRemoteNG.UI.Controls
             {
                 ResetExternalAppMenu();
 
-                foreach (ExternalTool extA in Runtime.ExternalTools)
+                foreach (ExternalTool extA in Runtime.ExternalToolsService.ExternalTools)
                 {
                     var menuItem = new ToolStripMenuItem
                     {
@@ -724,7 +724,7 @@ namespace mRemoteNG.UI.Controls
         {
             ContainerInfo selectedNodeAsContainer;
             if (_connectionTree.SelectedNode == null)
-                selectedNodeAsContainer = Runtime.ConnectionTreeModel.RootNodes.First();
+                selectedNodeAsContainer = Runtime.ConnectionsService.ConnectionTreeModel.RootNodes.First();
             else
                 selectedNodeAsContainer = _connectionTree.SelectedNode as ContainerInfo ?? _connectionTree.SelectedNode.Parent;
             Import.ImportFromFile(selectedNodeAsContainer);
@@ -742,41 +742,37 @@ namespace mRemoteNG.UI.Controls
 
         private void OnExportFileClicked(object sender, EventArgs e)
         {
-            Export.ExportToFile(_connectionTree.SelectedNode, Runtime.ConnectionTreeModel);
+            Export.ExportToFile(_connectionTree.SelectedNode, Runtime.ConnectionsService.ConnectionTreeModel);
         }
 
         private void OnAddConnectionClicked(object sender, EventArgs e)
         {
             _connectionTree.AddConnection();
-            Runtime.SaveConnectionsAsync();
         }
 
         private void OnAddFolderClicked(object sender, EventArgs e)
         {
             _connectionTree.AddFolder();
-            Runtime.SaveConnectionsAsync();
         }
 
         private void OnSortAscendingClicked(object sender, EventArgs e)
         {
-            SortNodesRecursive(_connectionTree.SelectedNode, ListSortDirection.Ascending);
+            _connectionTree.SortRecursive(_connectionTree.SelectedNode, ListSortDirection.Ascending);
         }
 
         private void OnSortDescendingClicked(object sender, EventArgs e)
         {
-            SortNodesRecursive(_connectionTree.SelectedNode, ListSortDirection.Descending);
+            _connectionTree.SortRecursive(_connectionTree.SelectedNode, ListSortDirection.Descending);
         }
 
         private void OnMoveUpClicked(object sender, EventArgs e)
         {
             _connectionTree.SelectedNode.Parent.PromoteChild(_connectionTree.SelectedNode);
-            Runtime.SaveConnectionsAsync();
         }
 
         private void OnMoveDownClicked(object sender, EventArgs e)
         {
             _connectionTree.SelectedNode.Parent.DemoteChild(_connectionTree.SelectedNode);
-            Runtime.SaveConnectionsAsync();
         }
 
         private void OnExternalToolClicked(object sender, EventArgs e)
@@ -797,19 +793,5 @@ namespace mRemoteNG.UI.Controls
             }
         }
         #endregion
-
-        private void SortNodesRecursive(ConnectionInfo sortTarget, ListSortDirection sortDirection)
-        {
-            if (sortTarget == null)
-                sortTarget = _connectionTree.GetRootConnectionNode();
-
-            var sortTargetAsContainer = sortTarget as ContainerInfo;
-            if (sortTargetAsContainer != null)
-                sortTargetAsContainer.SortRecursive(sortDirection);
-            else
-                _connectionTree.SelectedNode.Parent.SortRecursive(sortDirection);
-
-            Runtime.SaveConnectionsAsync();
-        }
     }
 }

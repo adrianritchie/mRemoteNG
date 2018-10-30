@@ -1,5 +1,6 @@
 
 
+using mRemoteNG.Connection;
 using mRemoteNG.Tree;
 
 namespace mRemoteNG.UI.Window
@@ -7,7 +8,7 @@ namespace mRemoteNG.UI.Window
 	public partial class ConnectionTreeWindow : BaseWindow
 	{
         #region  Windows Form Designer generated code
-		internal System.Windows.Forms.TextBox txtSearch;
+		internal Controls.Base.NGTextBox txtSearch;
 		internal System.Windows.Forms.Panel pnlConnections;
 		internal System.Windows.Forms.MenuStrip msMain;
 		internal System.Windows.Forms.ToolStripMenuItem mMenView;
@@ -27,7 +28,7 @@ namespace mRemoteNG.UI.Window
             this.olvConnections = new mRemoteNG.UI.Controls.ConnectionTree();
             this.pnlConnections = new System.Windows.Forms.Panel();
             this.PictureBox1 = new System.Windows.Forms.PictureBox();
-            this.txtSearch = new System.Windows.Forms.TextBox();
+            this.txtSearch = new Controls.Base.NGTextBox();
             this.msMain = new System.Windows.Forms.MenuStrip();
             this.mMenAddConnection = new System.Windows.Forms.ToolStripMenuItem();
             this.mMenAddFolder = new System.Windows.Forms.ToolStripMenuItem();
@@ -40,6 +41,10 @@ namespace mRemoteNG.UI.Window
             ((System.ComponentModel.ISupportInitialize)(this.PictureBox1)).BeginInit();
             this.msMain.SuspendLayout();
             this.SuspendLayout();
+            //
+            //Theming support
+            //
+            this.vsToolStripExtender = new WeifenLuo.WinFormsUI.Docking.VisualStudioToolStripExtender(this.components);
             // 
             // olvConnections
             // 
@@ -51,7 +56,7 @@ namespace mRemoteNG.UI.Window
             this.olvConnections.CellEditUseWholeCell = false;
             this.olvConnections.ConnectionTreeModel = new ConnectionTreeModel();
             this.olvConnections.Cursor = System.Windows.Forms.Cursors.Default;
-            treeNodeCompositeClickHandler1.ClickHandlers = new mRemoteNG.Tree.ITreeNodeClickHandler[0];
+            treeNodeCompositeClickHandler1.ClickHandlers = new ITreeNodeClickHandler<ConnectionInfo>[0];
             this.olvConnections.DoubleClickHandler = treeNodeCompositeClickHandler1;
             this.olvConnections.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
             this.olvConnections.HideSelection = false;
@@ -65,7 +70,7 @@ namespace mRemoteNG.UI.Window
             this.olvConnections.SelectedBackColor = System.Drawing.SystemColors.Highlight;
             this.olvConnections.SelectedForeColor = System.Drawing.SystemColors.HighlightText;
             this.olvConnections.ShowGroups = false;
-            treeNodeCompositeClickHandler2.ClickHandlers = new mRemoteNG.Tree.ITreeNodeClickHandler[0];
+            treeNodeCompositeClickHandler2.ClickHandlers = new mRemoteNG.Tree.ITreeNodeClickHandler<ConnectionInfo>[0];
             this.olvConnections.SingleClickHandler = treeNodeCompositeClickHandler2;
             this.olvConnections.Size = new System.Drawing.Size(192, 410);
             this.olvConnections.TabIndex = 20;
@@ -207,5 +212,6 @@ namespace mRemoteNG.UI.Window
 
         private System.ComponentModel.IContainer components;
         private Controls.ConnectionTree olvConnections;
+        private WeifenLuo.WinFormsUI.Docking.VisualStudioToolStripExtender vsToolStripExtender;
     }
 }

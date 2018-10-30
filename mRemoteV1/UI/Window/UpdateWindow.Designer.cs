@@ -5,32 +5,32 @@ namespace mRemoteNG.UI.Window
 	public partial class UpdateWindow
 	{
         #region  Windows Form Designer generated code
-		internal System.Windows.Forms.Label lblStatus;
-		internal System.Windows.Forms.TextBox txtChangeLog;
-		internal System.Windows.Forms.ProgressBar prgbDownload;
-		internal System.Windows.Forms.Button btnDownload;
-		internal System.Windows.Forms.Label lblChangeLogLabel;
+		internal Controls.Base.NGLabel lblStatus;
+		internal Controls.Base.NGTextBox txtChangeLog;
+		internal Controls.Base.NGProgressBar prgbDownload;
+		internal Controls.Base.NGButton btnDownload;
+		internal Controls.Base.NGLabel lblChangeLogLabel;
 		internal System.Windows.Forms.Panel pnlUpdate;
-		internal System.Windows.Forms.Label lblLatestVersionLabel;
-		internal System.Windows.Forms.Label lblInstalledVersionLabel;
-		internal System.Windows.Forms.Label lblLatestVersion;
-		internal System.Windows.Forms.Label lblInstalledVersion;
+		internal Controls.Base.NGLabel lblLatestVersionLabel;
+		internal Controls.Base.NGLabel lblInstalledVersionLabel;
+		internal Controls.Base.NGLabel lblLatestVersion;
+		internal Controls.Base.NGLabel lblInstalledVersion;
 		internal System.Windows.Forms.PictureBox pbUpdateImage;
-		internal System.Windows.Forms.Button btnCheckForUpdate;
+		internal Controls.Base.NGButton btnCheckForUpdate;
 				
 		private void InitializeComponent()
 		{
-            this.btnCheckForUpdate = new System.Windows.Forms.Button();
+            this.btnCheckForUpdate = new mRemoteNG.UI.Controls.Base.NGButton();
             this.pnlUpdate = new System.Windows.Forms.Panel();
-            this.lblChangeLogLabel = new System.Windows.Forms.Label();
-            this.btnDownload = new System.Windows.Forms.Button();
-            this.prgbDownload = new System.Windows.Forms.ProgressBar();
-            this.txtChangeLog = new System.Windows.Forms.TextBox();
-            this.lblStatus = new System.Windows.Forms.Label();
-            this.lblLatestVersionLabel = new System.Windows.Forms.Label();
-            this.lblInstalledVersionLabel = new System.Windows.Forms.Label();
-            this.lblLatestVersion = new System.Windows.Forms.Label();
-            this.lblInstalledVersion = new System.Windows.Forms.Label();
+            this.lblChangeLogLabel = new mRemoteNG.UI.Controls.Base.NGLabel();
+            this.btnDownload = new mRemoteNG.UI.Controls.Base.NGButton();
+            this.prgbDownload = new mRemoteNG.UI.Controls.Base.NGProgressBar();
+            this.txtChangeLog = new mRemoteNG.UI.Controls.Base.NGTextBox();
+            this.lblStatus = new mRemoteNG.UI.Controls.Base.NGLabel();
+            this.lblLatestVersionLabel = new mRemoteNG.UI.Controls.Base.NGLabel();
+            this.lblInstalledVersionLabel = new mRemoteNG.UI.Controls.Base.NGLabel();
+            this.lblLatestVersion = new mRemoteNG.UI.Controls.Base.NGLabel();
+            this.lblInstalledVersion = new mRemoteNG.UI.Controls.Base.NGLabel();
             this.pbUpdateImage = new System.Windows.Forms.PictureBox();
             this.pnlUpdate.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbUpdateImage)).BeginInit();
@@ -38,6 +38,7 @@ namespace mRemoteNG.UI.Window
             // 
             // btnCheckForUpdate
             // 
+            this.btnCheckForUpdate._mice = mRemoteNG.UI.Controls.Base.NGButton.MouseState.HOVER;
             this.btnCheckForUpdate.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnCheckForUpdate.Location = new System.Drawing.Point(16, 104);
             this.btnCheckForUpdate.Name = "btnCheckForUpdate";
@@ -74,11 +75,12 @@ namespace mRemoteNG.UI.Window
             // 
             // btnDownload
             // 
+            this.btnDownload._mice = mRemoteNG.UI.Controls.Base.NGButton.MouseState.HOVER;
             this.btnDownload.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnDownload.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnDownload.Location = new System.Drawing.Point(0, 216);
             this.btnDownload.Name = "btnDownload";
-            this.btnDownload.Size = new System.Drawing.Size(144, 32);
+            this.btnDownload.Size = new System.Drawing.Size(224, 32);
             this.btnDownload.TabIndex = 2;
             this.btnDownload.Text = "Download and Install";
             this.btnDownload.UseVisualStyleBackColor = true;
@@ -88,9 +90,9 @@ namespace mRemoteNG.UI.Window
             // 
             this.prgbDownload.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.prgbDownload.Location = new System.Drawing.Point(160, 224);
+            this.prgbDownload.Location = new System.Drawing.Point(230, 224);
             this.prgbDownload.Name = "prgbDownload";
-            this.prgbDownload.Size = new System.Drawing.Size(542, 23);
+            this.prgbDownload.Size = new System.Drawing.Size(472, 23);
             this.prgbDownload.TabIndex = 3;
             this.prgbDownload.Visible = false;
             // 

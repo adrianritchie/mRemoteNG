@@ -13,35 +13,34 @@ namespace mRemoteNG.UI.Window
 	public class AboutWindow : BaseWindow
 	{
         #region Form Init
-		internal Label lblCopyright;
-		internal Label lblTitle;
-		internal Label lblVersion;
-		internal Label lblLicense;
-		internal TextBox txtChangeLog;
-		internal Label lblChangeLog;
+
+		internal Controls.Base.NGLabel lblCopyright;
+		internal Controls.Base.NGLabel lblTitle;
+		internal Controls.Base.NGLabel lblVersion;
+		internal Controls.Base.NGLabel lblLicense;
+		internal Controls.Base.NGTextBox txtChangeLog;
+		internal Controls.Base.NGLabel lblChangeLog;
 		internal Panel pnlBottom;
 		internal PictureBox pbLogo;
-		internal Label lblEdition;
-        internal Label lblCredits;
-        internal TextBox txtCredits;
-        private TextBox verText;
+		internal Controls.Base.NGLabel lblEdition;
+        internal Controls.Base.NGLabel lblCredits;
+        internal Controls.Base.NGTextBox txtCredits;
         internal Panel pnlTop;
 				
 		private void InitializeComponent()
 		{
             this.pnlTop = new System.Windows.Forms.Panel();
-            this.lblEdition = new System.Windows.Forms.Label();
+            this.lblEdition = new mRemoteNG.UI.Controls.Base.NGLabel();
             this.pbLogo = new System.Windows.Forms.PictureBox();
             this.pnlBottom = new System.Windows.Forms.Panel();
-            this.verText = new System.Windows.Forms.TextBox();
-            this.lblCredits = new System.Windows.Forms.Label();
-            this.txtCredits = new System.Windows.Forms.TextBox();
-            this.txtChangeLog = new System.Windows.Forms.TextBox();
-            this.lblTitle = new System.Windows.Forms.Label();
-            this.lblVersion = new System.Windows.Forms.Label();
-            this.lblChangeLog = new System.Windows.Forms.Label();
-            this.lblLicense = new System.Windows.Forms.Label();
-            this.lblCopyright = new System.Windows.Forms.Label();
+            this.lblCredits = new mRemoteNG.UI.Controls.Base.NGLabel();
+            this.txtCredits = new mRemoteNG.UI.Controls.Base.NGTextBox();
+            this.txtChangeLog = new mRemoteNG.UI.Controls.Base.NGTextBox();
+            this.lblTitle = new mRemoteNG.UI.Controls.Base.NGLabel();
+            this.lblVersion = new mRemoteNG.UI.Controls.Base.NGLabel();
+            this.lblChangeLog = new mRemoteNG.UI.Controls.Base.NGLabel();
+            this.lblLicense = new mRemoteNG.UI.Controls.Base.NGLabel();
+            this.lblCopyright = new mRemoteNG.UI.Controls.Base.NGLabel();
             this.pnlTop.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbLogo)).BeginInit();
             this.pnlBottom.SuspendLayout();
@@ -90,7 +89,6 @@ namespace mRemoteNG.UI.Window
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.pnlBottom.BackColor = System.Drawing.SystemColors.Control;
-            this.pnlBottom.Controls.Add(this.verText);
             this.pnlBottom.Controls.Add(this.lblCredits);
             this.pnlBottom.Controls.Add(this.txtCredits);
             this.pnlBottom.Controls.Add(this.txtChangeLog);
@@ -104,18 +102,6 @@ namespace mRemoteNG.UI.Window
             this.pnlBottom.Name = "pnlBottom";
             this.pnlBottom.Size = new System.Drawing.Size(1121, 559);
             this.pnlBottom.TabIndex = 1;
-            // 
-            // verText
-            // 
-            this.verText.BackColor = System.Drawing.SystemColors.Control;
-            this.verText.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.verText.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.verText.Location = new System.Drawing.Point(69, 51);
-            this.verText.Name = "verText";
-            this.verText.Size = new System.Drawing.Size(147, 20);
-            this.verText.TabIndex = 12;
-            this.verText.TabStop = false;
-            this.verText.Text = "w.x.y.z";
             // 
             // lblCredits
             // 
@@ -253,14 +239,14 @@ namespace mRemoteNG.UI.Window
         #endregion
 				
         #region Public Methods
-		public AboutWindow(DockContent Panel)
+		public AboutWindow()
 		{
 			WindowType = WindowType.About;
-		    DockPnl = Panel;
-            DockPnl = new DockContent();
+			DockPnl = new DockContent();
 			InitializeComponent();
-			Runtime.FontOverride(this);
-		}
+            FontOverrider.FontOverride(this);
+            Themes.ThemeManager.getInstance().ThemeChanged += ApplyTheme;
+        }
         #endregion
 				
         #region Private Methods
@@ -271,8 +257,22 @@ namespace mRemoteNG.UI.Window
 			TabText = Language.strAbout;
 			Text = Language.strAbout;
 		}
-				
-		private void ApplyEditions()
+
+        private new void ApplyTheme()
+        {
+            if (!Themes.ThemeManager.getInstance().ThemingActive) return;
+            base.ApplyTheme();
+            BackColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Background");
+            ForeColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Foreground");
+            pnlBottom.BackColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Background");
+            pnlBottom.ForeColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Foreground");
+            pnlTop.BackColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Background");
+            pnlTop.ForeColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Foreground");
+            lblEdition.BackColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Background");
+            lblEdition.ForeColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Foreground");
+        }
+
+        private void ApplyEditions()
 		{
             #if PORTABLE
 			lblEdition.Text = Language.strLabelPortableEdition;
@@ -309,14 +309,14 @@ namespace mRemoteNG.UI.Window
 	    private void About_Load(object sender, EventArgs e)
 	    {
 	        ApplyLanguage();
+            ApplyTheme();
 	        ApplyEditions();
 
 	        try
 	        {
 	            lblCopyright.Text = GeneralAppInfo.Copyright;
 
-	            lblVersion.Text = @"Version ";
-	            verText.Text = GeneralAppInfo.ApplicationVersion;
+	            lblVersion.Text = $@"Version {GeneralAppInfo.ApplicationVersion}";
 
 	            if (File.Exists(GeneralAppInfo.HomePath + "\\CHANGELOG.TXT"))
 	            {

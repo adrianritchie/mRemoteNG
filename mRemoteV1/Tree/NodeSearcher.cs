@@ -5,7 +5,7 @@ using mRemoteNG.Connection;
 
 namespace mRemoteNG.Tree
 {
-    public class NodeSearcher
+	public class NodeSearcher
     {
         private readonly ConnectionTreeModel _connectionTreeModel;
 
@@ -22,10 +22,13 @@ namespace mRemoteNG.Tree
         {
             ResetMatches();
             if (searchText == "") return Matches;
-            var nodes = (List<ConnectionInfo>)_connectionTreeModel.GetRecursiveChildList();
+            var nodes = _connectionTreeModel.GetRecursiveChildList();
+            var searchTextLower = searchText.ToLowerInvariant();
             foreach (var node in nodes)
             {
-                if (node.Name.ToLowerInvariant().Contains(searchText.ToLowerInvariant()))
+                if (node.Name.ToLowerInvariant().Contains(searchTextLower) ||
+                    node.Description.ToLowerInvariant().Contains(searchTextLower) ||
+                    node.Hostname.ToLowerInvariant().Contains(searchTextLower))
                     Matches.Add(node);
             }
             if (Matches.Count > 0)

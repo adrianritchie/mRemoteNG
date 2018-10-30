@@ -1,18 +1,22 @@
-using mRemoteNG.Tools;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using mRemoteNG.Tools;
 using mRemoteNG.Tree.Root;
-
+// ReSharper disable ArrangeAccessorOwnerBody
 
 namespace mRemoteNG.Config.Putty
 {
-	public class PuttySessionsManager
+    public class PuttySessionsManager
 	{
         public static PuttySessionsManager Instance { get; } = new PuttySessionsManager();
 
         private readonly List<AbstractPuttySessionsProvider> _providers = new List<AbstractPuttySessionsProvider>();
-        public IEnumerable<AbstractPuttySessionsProvider> Providers => _providers;
+        public IEnumerable<AbstractPuttySessionsProvider> Providers
+        {
+            get { return _providers; }
+        }
+
 	    public List<RootPuttySessionsNodeInfo> RootPuttySessionsNodes { get; } = new List<RootPuttySessionsNodeInfo>();
 
 	    private PuttySessionsManager()
@@ -31,10 +35,12 @@ namespace mRemoteNG.Config.Putty
 			}
 		}
 
-	    private void AddSessionsFromProvider(AbstractPuttySessionsProvider provider)
+	    private void AddSessionsFromProvider(AbstractPuttySessionsProvider puttySessionProvider)
 	    {
-            var rootTreeNode = provider.RootInfo;
-	        provider.GetSessions();
+	        puttySessionProvider.ThrowIfNull(nameof(puttySessionProvider));
+
+            var rootTreeNode = puttySessionProvider.RootInfo;
+	        puttySessionProvider.GetSessions();
 
             if (!RootPuttySessionsNodes.Contains(rootTreeNode) && rootTreeNode.HasChildren())
                 RootPuttySessionsNodes.Add(rootTreeNode);
@@ -122,7 +128,10 @@ namespace mRemoteNG.Config.Putty
         #region Public Classes
         public class SessionList : StringConverter
         {
-            public static string[] Names => Instance.GetSessionNames();
+            public static string[] Names
+            {
+                get { return Instance.GetSessionNames(); }
+            }
 
             public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext context)
 	        {

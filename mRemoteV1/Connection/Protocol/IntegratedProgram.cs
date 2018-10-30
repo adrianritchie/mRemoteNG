@@ -7,7 +7,6 @@ using mRemoteNG.App;
 using mRemoteNG.Messages;
 using mRemoteNG.Tools;
 
-
 namespace mRemoteNG.Connection.Protocol
 {
 	public class IntegratedProgram : ProtocolBase
@@ -24,13 +23,15 @@ namespace mRemoteNG.Connection.Protocol
 		    if (InterfaceControl.Info == null)
 				return base.Initialize();
 
-		    _externalTool = Runtime.GetExtAppByName(InterfaceControl.Info.ExtApp);
+		    _externalTool = Runtime.ExternalToolsService.GetExtAppByName(InterfaceControl.Info.ExtApp);
+
 			if (_externalTool == null)
 			{
 				Runtime.MessageCollector?.AddMessage(MessageClass.ErrorMsg, string.Format(Language.CouldNotFindExternalTool, InterfaceControl.Info.ExtApp));
 				return false;
 			}
-		    _externalTool.ConnectionInfo = InterfaceControl.Info;
+
+			_externalTool.ConnectionInfo = InterfaceControl.Info;
 
 		    return base.Initialize();
 		}

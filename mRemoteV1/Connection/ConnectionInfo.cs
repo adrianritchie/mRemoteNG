@@ -1,12 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Reflection;
 using mRemoteNG.App;
 using mRemoteNG.Connection.Protocol;
 using mRemoteNG.Connection.Protocol.Http;
-//using mRemoteNG.Connection.Protocol.ICA;
 using mRemoteNG.Connection.Protocol.RAW;
 using mRemoteNG.Connection.Protocol.RDP;
 using mRemoteNG.Connection.Protocol.Rlogin;
@@ -14,15 +8,18 @@ using mRemoteNG.Connection.Protocol.SSH;
 using mRemoteNG.Connection.Protocol.Telnet;
 using mRemoteNG.Connection.Protocol.VNC;
 using mRemoteNG.Container;
-using mRemoteNG.Tools;
 using mRemoteNG.Tree;
-using mRemoteNG.Tree.Root;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Reflection;
 
 
 namespace mRemoteNG.Connection
 {
-	[DefaultProperty("Name")]
-    public class ConnectionInfo : AbstractConnectionInfoData, IHasParent, IInheritable
+    [DefaultProperty("Name")]
+    public class ConnectionInfo : AbstractConnectionRecord, IHasParent, IInheritable
     {        
         #region Public Properties
         [Browsable(false)]
@@ -32,7 +29,7 @@ namespace mRemoteNG.Connection
 	    public ProtocolList OpenConnections { get; protected set; }
 
 	    [Browsable(false)]
-        public bool IsContainer { get; set; }
+        public virtual bool IsContainer { get; set; }
 
 	    [Browsable(false)]
         public bool IsDefault { get; set; }
@@ -52,7 +49,14 @@ namespace mRemoteNG.Connection
 	    #endregion
 
         #region Constructors
-        public ConnectionInfo()
+
+	    public ConnectionInfo()
+			: this(Guid.NewGuid().ToString())
+	    {
+	    }
+
+        public ConnectionInfo(string uniqueId)
+			: base(uniqueId)
 		{
             SetTreeDisplayDefaults();
             SetConnectionDefaults();
@@ -65,12 +69,6 @@ namespace mRemoteNG.Connection
             SetNonBrowsablePropertiesDefaults();
             SetDefaults();
 		}
-			
-		public ConnectionInfo(ContainerInfo parent) : this()
-		{
-			IsContainer = true;
-			parent.AddChild(this);
-		}
         #endregion
 			
         #region Public Methods
@@ -78,16 +76,18 @@ namespace mRemoteNG.Connection
 		{
 		    var newConnectionInfo = new ConnectionInfo();
             newConnectionInfo.CopyFrom(this);
-			newConnectionInfo.ConstantID = MiscTools.CreateConstantID();
 		    newConnectionInfo.Inheritance = Inheritance.Clone();
-			return newConnectionInfo;
+            newConnectionInfo.Inheritance.Parent = newConnectionInfo;
+            return newConnectionInfo;
 		}
 
 	    public void CopyFrom(ConnectionInfo sourceConnectionInfo)
 	    {
-	        var properties = typeof(AbstractConnectionInfoData).GetProperties();
+	        var properties = GetType().BaseType?.GetProperties().Where(prop => prop.CanRead && prop.CanWrite);
+	        if (properties == null) return;
 	        foreach (var property in properties)
 	        {
+	            if (property.Name == nameof(Parent)) continue;
 	            var remotePropertyValue = property.GetValue(sourceConnectionInfo, null);
                 property.SetValue(this, remotePropertyValue, null);
 	        }
@@ -126,21 +126,30 @@ namespace mRemoteNG.Connection
             return filteredProperties;
         }
 
+	    public virtual IEnumerable<PropertyInfo> GetSerializableProperties()
+	    {
+			var excludedProperties = new[] { "Parent", "Name", "Hostname", "Port", "Inheritance", "OpenConnections",
+				"IsContainer", "IsDefault", "PositionID", "ConstantID", "TreeNode", "IsQuickConnect", "PleaseConnect" };
+
+		    return GetProperties(excludedProperties);
+	    }
+
 	    public virtual void SetParent(ContainerInfo newParent)
 	    {
             RemoveParent();
 		    newParent?.AddChild(this);
-			if (newParent is RootNodeInfo)
-				Inheritance.DisableInheritance();
 	    }
 
         public void RemoveParent()
         {
-			if (Parent is RootNodeInfo)
-				Inheritance.EnableInheritance();
-
             Parent?.RemoveChild(this);
         }
+
+	    public ConnectionInfo GetRootParent()
+	    {
+	        return Parent != null ? Parent.GetRootParent() : this;
+	    }
+
 	    #endregion
 
         #region Public Enumerations
@@ -160,7 +169,14 @@ namespace mRemoteNG.Connection
         #region Private Methods
         protected override TPropertyType GetPropertyValue<TPropertyType>(string propertyName, TPropertyType value)
         {
-            return ShouldThisPropertyBeInherited(propertyName) ? GetInheritedPropertyValue<TPropertyType>(propertyName) : value;
+            if (!ShouldThisPropertyBeInherited(propertyName))
+                return value;
+
+            var couldGetInheritedValue = TryGetInheritedPropertyValue<TPropertyType>(propertyName, out var inheritedValue);
+
+            return couldGetInheritedValue
+                ? inheritedValue
+                : value;
         }
 
 	    private bool ShouldThisPropertyBeInherited(string propertyName)
@@ -181,17 +197,24 @@ namespace mRemoteNG.Connection
             return inheritPropertyValue;
         }
 
-        private TPropertyType GetInheritedPropertyValue<TPropertyType>(string propertyName)
+        private bool TryGetInheritedPropertyValue<TPropertyType>(string propertyName, out TPropertyType inheritedValue)
         {
-            var connectionInfoType = Parent.GetType();
-            var parentPropertyInfo = connectionInfoType.GetProperty(propertyName);
-            if (parentPropertyInfo == null)
-                return default(TPropertyType); // shouldn't get here...
-            var parentPropertyValue = (TPropertyType)parentPropertyInfo.GetValue(Parent, null);
+            try
+            {
+                var connectionInfoType = Parent.GetType();
+                var parentPropertyInfo = connectionInfoType.GetProperty(propertyName);
+                if (parentPropertyInfo == null)
+                    throw new NullReferenceException($"Could not retrieve property data for property '{propertyName}' on parent node '{Parent?.Name}'");
 
-            return parentPropertyValue;
-
-            
+                inheritedValue = (TPropertyType)parentPropertyInfo.GetValue(Parent, null);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Runtime.MessageCollector.AddExceptionStackTrace($"Error retrieving inherited property '{propertyName}'", e);
+                inheritedValue = default(TPropertyType);
+                return false;
+            }
         }
 
 		private static int GetDefaultPort(ProtocolType protocol)
@@ -202,7 +225,7 @@ namespace mRemoteNG.Connection
                 switch (protocol)
                 {
                     case ProtocolType.RDP:
-                        return (int)ProtocolRDP.Defaults.Port;
+                        return (int)RdpProtocol.Defaults.Port;
                     case ProtocolType.VNC:
                         return (int)ProtocolVNC.Defaults.Port;
                     case ProtocolType.SSH1:
@@ -214,13 +237,13 @@ namespace mRemoteNG.Connection
                     case ProtocolType.Rlogin:
                         return (int)ProtocolRlogin.Defaults.Port;
                     case ProtocolType.RAW:
-                        return (int)ProtocolRAW.Defaults.Port;
+                        return (int)RawProtocol.Defaults.Port;
                     case ProtocolType.HTTP:
                         return (int)ProtocolHTTP.Defaults.Port;
                     case ProtocolType.HTTPS:
                         return (int)ProtocolHTTPS.Defaults.Port;
                     //case ProtocolType.ICA:
-                    //    return (int)ProtocolICA.Defaults.Port;
+                    //    return (int)IcaProtocol.Defaults.Port;
                     case ProtocolType.IntApp:
                         return (int)IntegratedProgram.Defaults.Port;
                 }
@@ -244,9 +267,6 @@ namespace mRemoteNG.Connection
         private void SetConnectionDefaults()
         {
             Hostname = string.Empty;
-            Username = Settings.Default.ConDefaultUsername;
-            Password = Settings.Default.ConDefaultPassword;
-            Domain = Settings.Default.ConDefaultDomain;
         }
 
         private void SetProtocolDefaults()
@@ -255,9 +275,9 @@ namespace mRemoteNG.Connection
             ExtApp = Settings.Default.ConDefaultExtApp;
             Port = 0;
             PuttySession = Settings.Default.ConDefaultPuttySession;
-            //ICAEncryptionStrength = (ProtocolICA.EncryptionStrength) Enum.Parse(typeof(ProtocolICA.EncryptionStrength), Settings.Default.ConDefaultICAEncryptionStrength);
+            //ICAEncryptionStrength = (IcaProtocol.EncryptionStrength) Enum.Parse(typeof(IcaProtocol.EncryptionStrength), Settings.Default.ConDefaultICAEncryptionStrength);
             UseConsoleSession = Settings.Default.ConDefaultUseConsoleSession;
-            RDPAuthenticationLevel = (ProtocolRDP.AuthenticationLevel) Enum.Parse(typeof(ProtocolRDP.AuthenticationLevel), Settings.Default.ConDefaultRDPAuthenticationLevel);
+            RDPAuthenticationLevel = (RdpProtocol.AuthenticationLevel) Enum.Parse(typeof(RdpProtocol.AuthenticationLevel), Settings.Default.ConDefaultRDPAuthenticationLevel);
             RDPMinutesToIdleTimeout = Settings.Default.ConDefaultRDPMinutesToIdleTimeout;
             RDPAlertIdleTimeout = Settings.Default.ConDefaultRDPAlertIdleTimeout;
             LoadBalanceInfo = Settings.Default.ConDefaultLoadBalanceInfo;
@@ -267,9 +287,9 @@ namespace mRemoteNG.Connection
 
         private void SetRdGatewayDefaults()
         {
-            RDGatewayUsageMethod = (ProtocolRDP.RDGatewayUsageMethod) Enum.Parse(typeof(ProtocolRDP.RDGatewayUsageMethod), Settings.Default.ConDefaultRDGatewayUsageMethod);
+            RDGatewayUsageMethod = (RdpProtocol.RDGatewayUsageMethod) Enum.Parse(typeof(RdpProtocol.RDGatewayUsageMethod), Settings.Default.ConDefaultRDGatewayUsageMethod);
             RDGatewayHostname = Settings.Default.ConDefaultRDGatewayHostname;
-            RDGatewayUseConnectionCredentials = (ProtocolRDP.RDGatewayUseConnectionCredentials) Enum.Parse(typeof(ProtocolRDP.RDGatewayUseConnectionCredentials), Settings.Default.ConDefaultRDGatewayUseConnectionCredentials);
+            RDGatewayUseConnectionCredentials = (RdpProtocol.RDGatewayUseConnectionCredentials) Enum.Parse(typeof(RdpProtocol.RDGatewayUseConnectionCredentials), Settings.Default.ConDefaultRDGatewayUseConnectionCredentials);
             RDGatewayUsername = Settings.Default.ConDefaultRDGatewayUsername;
             RDGatewayPassword = Settings.Default.ConDefaultRDGatewayPassword;
             RDGatewayDomain = Settings.Default.ConDefaultRDGatewayDomain;
@@ -277,9 +297,9 @@ namespace mRemoteNG.Connection
 
         private void SetAppearanceDefaults() 
         {
-            Resolution = (ProtocolRDP.RDPResolutions) Enum.Parse(typeof(ProtocolRDP.RDPResolutions), Settings.Default.ConDefaultResolution);
+            Resolution = (RdpProtocol.RDPResolutions) Enum.Parse(typeof(RdpProtocol.RDPResolutions), Settings.Default.ConDefaultResolution);
             AutomaticResize = Settings.Default.ConDefaultAutomaticResize;
-            Colors = (ProtocolRDP.RDPColors) Enum.Parse(typeof(ProtocolRDP.RDPColors), Settings.Default.ConDefaultColors);
+            Colors = (RdpProtocol.RDPColors) Enum.Parse(typeof(RdpProtocol.RDPColors), Settings.Default.ConDefaultColors);
             CacheBitmaps = Settings.Default.ConDefaultCacheBitmaps;
             DisplayWallpaper = Settings.Default.ConDefaultDisplayWallpaper;
             DisplayThemes = Settings.Default.ConDefaultDisplayThemes;
@@ -294,13 +314,12 @@ namespace mRemoteNG.Connection
             RedirectPrinters = Settings.Default.ConDefaultRedirectPrinters;
             RedirectPorts = Settings.Default.ConDefaultRedirectPorts;
             RedirectSmartCards = Settings.Default.ConDefaultRedirectSmartCards;
-            RedirectSound = (ProtocolRDP.RDPSounds) Enum.Parse(typeof(ProtocolRDP.RDPSounds), Settings.Default.ConDefaultRedirectSound);
-            SoundQuality = (ProtocolRDP.RDPSoundQuality)Enum.Parse(typeof(ProtocolRDP.RDPSoundQuality), Settings.Default.ConDefaultSoundQuality);
+            RedirectSound = (RdpProtocol.RDPSounds) Enum.Parse(typeof(RdpProtocol.RDPSounds), Settings.Default.ConDefaultRedirectSound);
+            SoundQuality = (RdpProtocol.RDPSoundQuality)Enum.Parse(typeof(RdpProtocol.RDPSoundQuality), Settings.Default.ConDefaultSoundQuality);
         }
 
         private void SetMiscDefaults()
         {
-            ConstantID = MiscTools.CreateConstantID();
             PreExtApp = Settings.Default.ConDefaultPreExtApp;
             PostExtApp = Settings.Default.ConDefaultPostExtApp;
             MacAddress = Settings.Default.ConDefaultMacAddress;

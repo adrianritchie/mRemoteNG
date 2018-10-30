@@ -1154,7 +1154,7 @@ Ver el articulo de soporte de Microsoft en http://support.microsoft.com/kb/81183
     <value>Sin SmartSize</value>
   </data>
   <data name="strNoUpdateAvailable" xml:space="preserve">
-    <value>Sin actualizaciones dosponibles</value>
+    <value>Sin actualizaciones disponibles</value>
   </data>
   <data name="strOldConffile" xml:space="preserve">
     <value>Está intentando cargar un archivo de conexión que ha sido creado con una versión muy antigua de mRemote, ésto puede causar un error en tiempo de ejecución.
@@ -1588,9 +1588,6 @@ Mensaje:
   <data name="strRdpCloseConnectionFailed" xml:space="preserve">
     <value>¡Cierre de conexión RDP fallida!</value>
   </data>
-  <data name="strRdpConnectionOpenFailed" xml:space="preserve">
-    <value>¡Fallo en la apertura de la conexión!</value>
-  </data>
   <data name="strRdpControlCreationFailed" xml:space="preserve">
     <value>No se pudo crear el control RDP, por favor verifique los requerimientos de mRemoteNG.</value>
   </data>
@@ -1665,9 +1662,6 @@ Mensaje:
   </data>
   <data name="strRdpGetSessionsFailed" xml:space="preserve">
     <value>¡Obtención de sesión fallida!</value>
-  </data>
-  <data name="strRdpOpenConnectionFailed" xml:space="preserve">
-    <value>¡Apertura de conexión RDP fallida!</value>
   </data>
   <data name="strRdpReconnectCount" xml:space="preserve">
     <value>Contador de Reconexiones RDP:</value>
@@ -2032,9 +2026,6 @@ mRemoteNG ahora se cerrará y comenzará la instalación.</value>
   </data>
   <data name="strVncConnectionDisconnectFailed" xml:space="preserve">
     <value>¡Desconexión VNC fallida!</value>
-  </data>
-  <data name="strVncConnectionOpenFailed" xml:space="preserve">
-    <value>¡Fallo abriendo conexiones!</value>
   </data>
   <data name="strVncRefreshFailed" xml:space="preserve">
     <value>¡Fallo en el refresco de pantalla de VNC!</value>

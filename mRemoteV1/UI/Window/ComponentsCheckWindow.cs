@@ -1,43 +1,43 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
-using WeifenLuo.WinFormsUI.Docking;
 using System.IO;
-using mRemoteNG.App;
 using System.Threading;
 using AxMSTSCLib;
 //using AxWFICALib;
 using Gecko;
+using mRemoteNG.App;
 using mRemoteNG.App.Info;
 using mRemoteNG.Connection.Protocol.RDP;
 using mRemoteNG.Messages;
+using WeifenLuo.WinFormsUI.Docking;
 
 namespace mRemoteNG.UI.Window
 {
-    public class ComponentsCheckWindow : BaseWindow
+	public class ComponentsCheckWindow : BaseWindow
     {
         #region Form Stuff
         private System.Windows.Forms.PictureBox pbCheck1;
-        private System.Windows.Forms.Label lblCheck1;
+        private Controls.Base.NGLabel lblCheck1;
         private System.Windows.Forms.Panel pnlCheck2;
-        private System.Windows.Forms.Label lblCheck2;
+        private Controls.Base.NGLabel lblCheck2;
         private System.Windows.Forms.PictureBox pbCheck2;
         private System.Windows.Forms.Panel pnlCheck3;
-        private System.Windows.Forms.Label lblCheck3;
+        private Controls.Base.NGLabel lblCheck3;
         private System.Windows.Forms.PictureBox pbCheck3;
         private System.Windows.Forms.Panel pnlCheck4;
-        private System.Windows.Forms.Label lblCheck4;
+        private Controls.Base.NGLabel lblCheck4;
         private System.Windows.Forms.PictureBox pbCheck4;
         private System.Windows.Forms.Panel pnlCheck5;
-        private System.Windows.Forms.Label lblCheck5;
+        private Controls.Base.NGLabel lblCheck5;
         private System.Windows.Forms.PictureBox pbCheck5;
-        private System.Windows.Forms.Button btnCheckAgain;
-        private System.Windows.Forms.TextBox txtCheck1;
-        private System.Windows.Forms.TextBox txtCheck2;
-        private System.Windows.Forms.TextBox txtCheck3;
-        private System.Windows.Forms.TextBox txtCheck4;
-        private System.Windows.Forms.TextBox txtCheck5;
-        private System.Windows.Forms.CheckBox chkAlwaysShow;
+        private Controls.Base.NGButton btnCheckAgain;
+        private Controls.Base.NGTextBox txtCheck1;
+        private Controls.Base.NGTextBox txtCheck2;
+        private Controls.Base.NGTextBox txtCheck3;
+        private Controls.Base.NGTextBox txtCheck4;
+        private Controls.Base.NGTextBox txtCheck5;
+        private Controls.Base.NGCheckBox chkAlwaysShow;
         private System.Windows.Forms.Panel pnlChecks;
         private System.Windows.Forms.Panel pnlCheck1;
 
@@ -45,28 +45,28 @@ namespace mRemoteNG.UI.Window
         {
             pnlCheck1 = new System.Windows.Forms.Panel();
             Load += new EventHandler(ComponentsCheck_Load);
-            txtCheck1 = new System.Windows.Forms.TextBox();
-            lblCheck1 = new System.Windows.Forms.Label();
+            txtCheck1 = new Controls.Base.NGTextBox();
+            lblCheck1 = new Controls.Base.NGLabel();
             pbCheck1 = new System.Windows.Forms.PictureBox();
             pnlCheck2 = new System.Windows.Forms.Panel();
-            txtCheck2 = new System.Windows.Forms.TextBox();
-            lblCheck2 = new System.Windows.Forms.Label();
+            txtCheck2 = new Controls.Base.NGTextBox();
+            lblCheck2 = new Controls.Base.NGLabel();
             pbCheck2 = new System.Windows.Forms.PictureBox();
             pnlCheck3 = new System.Windows.Forms.Panel();
-            txtCheck3 = new System.Windows.Forms.TextBox();
-            lblCheck3 = new System.Windows.Forms.Label();
+            txtCheck3 = new Controls.Base.NGTextBox();
+            lblCheck3 = new Controls.Base.NGLabel();
             pbCheck3 = new System.Windows.Forms.PictureBox();
             pnlCheck4 = new System.Windows.Forms.Panel();
-            txtCheck4 = new System.Windows.Forms.TextBox();
-            lblCheck4 = new System.Windows.Forms.Label();
+            txtCheck4 = new Controls.Base.NGTextBox();
+            lblCheck4 = new Controls.Base.NGLabel();
             pbCheck4 = new System.Windows.Forms.PictureBox();
             pnlCheck5 = new System.Windows.Forms.Panel();
-            txtCheck5 = new System.Windows.Forms.TextBox();
-            lblCheck5 = new System.Windows.Forms.Label();
+            txtCheck5 = new Controls.Base.NGTextBox();
+            lblCheck5 = new Controls.Base.NGLabel();
             pbCheck5 = new System.Windows.Forms.PictureBox();
-            btnCheckAgain = new System.Windows.Forms.Button();
+            btnCheckAgain = new Controls.Base.NGButton();
             btnCheckAgain.Click += new EventHandler(btnCheckAgain_Click);
-            chkAlwaysShow = new System.Windows.Forms.CheckBox();
+            chkAlwaysShow = new Controls.Base.NGCheckBox();
             chkAlwaysShow.CheckedChanged += new EventHandler(chkAlwaysShow_CheckedChanged);
             pnlChecks = new System.Windows.Forms.Panel();
             pnlCheck1.SuspendLayout();
@@ -394,11 +394,13 @@ namespace mRemoteNG.UI.Window
         #endregion
 
         #region Public Methods
-        public ComponentsCheckWindow(DockContent Panel)
+        public ComponentsCheckWindow()
         {
             WindowType = WindowType.ComponentsCheck;
-            DockPnl = Panel;
+            DockPnl = new DockContent();
             InitializeComponent();
+            FontOverrider.FontOverride(this);
+            Themes.ThemeManager.getInstance().ThemeChanged += ApplyTheme;
         }
         #endregion
 
@@ -406,7 +408,8 @@ namespace mRemoteNG.UI.Window
         private void ComponentsCheck_Load(object sender, EventArgs e)
         {
             ApplyLanguage();
-            chkAlwaysShow.Checked = Convert.ToBoolean(Settings.Default.StartupComponentsCheck);
+            ApplyTheme();
+            chkAlwaysShow.Checked = Settings.Default.StartupComponentsCheck;
             CheckComponents();
         }
 
@@ -416,6 +419,24 @@ namespace mRemoteNG.UI.Window
             Text = Language.strComponentsCheck;
             chkAlwaysShow.Text = Language.strCcAlwaysShowScreen;
             btnCheckAgain.Text = Language.strCcCheckAgain;
+        }
+
+        private new void ApplyTheme()
+        {
+            if (!Themes.ThemeManager.getInstance().ThemingActive) return;
+            base.ApplyTheme();
+            pnlCheck1.BackColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Background");
+            pnlCheck1.ForeColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Foreground");
+            pnlCheck2.BackColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Background");
+            pnlCheck2.ForeColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Foreground");
+            pnlCheck3.BackColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Background");
+            pnlCheck3.ForeColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Foreground");
+            pnlCheck4.BackColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Background");
+            pnlCheck4.ForeColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Foreground");
+            pnlCheck5.BackColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Background");
+            pnlCheck5.ForeColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Foreground");
+            pnlChecks.BackColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Background");
+            pnlChecks.ForeColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Foreground");
         }
 
         private void btnCheckAgain_Click(object sender, EventArgs e)
@@ -438,7 +459,7 @@ namespace mRemoteNG.UI.Window
             }
             catch (Exception ex)
             {
-                Runtime.MessageCollector.AddExceptionMessage("Failed to properly show the ComponentsWindow", ex, MessageClass.ErrorMsg, true);
+                Runtime.MessageCollector.AddExceptionMessage("Failed to properly show the ComponentsWindow", ex);
             }
         }
         #endregion
@@ -470,10 +491,10 @@ namespace mRemoteNG.UI.Window
                         System.Windows.Forms.Application.DoEvents();
                     }
 
-                    if (!(new Version(Convert.ToString(rdpClient.Version)) >= ProtocolRDP.Versions.RDC80))
+                    if (!(new Version(rdpClient.Version) >= RdpProtocol.Versions.RDC80))
                     {
                         throw new Exception(
-                            $"Found RDC Client version {rdpClient.Version} but version {ProtocolRDP.Versions.RDC80} or higher is required.");
+                            $"Found RDC Client version {rdpClient.Version} but version {RdpProtocol.Versions.RDC80} or higher is required.");
                     }
 
                     pbCheck1.Image = Resources.Good_Symbol;
@@ -488,7 +509,7 @@ namespace mRemoteNG.UI.Window
                 pbCheck1.Image = Resources.Bad_Symbol;
                 lblCheck1.ForeColor = Color.Firebrick;
                 lblCheck1.Text = "RDP (Remote Desktop) " + Language.strCcCheckFailed;
-                txtCheck1.Text = Language.strCcRDPFailed;
+                txtCheck1.Text = string.Format(Language.strCcRDPFailed, GeneralAppInfo.UrlForum);
 
                 Runtime.MessageCollector.AddMessage(MessageClass.WarningMsg,
                     "RDP " + Language.strCcNotInstalledProperly, true);
@@ -524,7 +545,7 @@ namespace mRemoteNG.UI.Window
                 pbCheck2.Image = Resources.Bad_Symbol;
                 lblCheck2.ForeColor = Color.Firebrick;
                 lblCheck2.Text = "VNC (Virtual Network Computing) " + Language.strCcCheckFailed;
-                txtCheck2.Text = Language.strCcVNCFailed;
+                txtCheck2.Text = string.Format(Language.strCcVNCFailed, GeneralAppInfo.UrlForum);
 
                 Runtime.MessageCollector.AddMessage(MessageClass.WarningMsg,
                     "VNC " + Language.strCcNotInstalledProperly, true);
@@ -541,7 +562,7 @@ namespace mRemoteNG.UI.Window
             }
             else
             {
-                pPath = Convert.ToString(Settings.Default.CustomPuttyPath);
+                pPath = Settings.Default.CustomPuttyPath;
             }
 
             if (File.Exists(pPath))
@@ -591,7 +612,7 @@ namespace mRemoteNG.UI.Window
                 pbCheck4.Image = Resources.Bad_Symbol;
                 lblCheck4.ForeColor = Color.Firebrick;
                 lblCheck4.Text = @"ICA (Citrix ICA) " + Language.strCcCheckFailed;
-                txtCheck4.Text = Language.strCcICAFailed;
+                txtCheck4.Text = string.Format(Language.strCcICAFailed, GeneralAppInfo.UrlForum);
 
                 Runtime.MessageCollector.AddMessage(MessageClass.WarningMsg, "ICA " + Language.strCcNotInstalledProperly, true);
                 Runtime.MessageCollector.AddMessage(MessageClass.ErrorMsg, ex.Message, true);
@@ -634,7 +655,7 @@ namespace mRemoteNG.UI.Window
                 pbCheck5.Image = Resources.Bad_Symbol;
                 lblCheck5.ForeColor = Color.Firebrick;
                 lblCheck5.Text = @"Gecko (Firefox) Rendering Engine (HTTP/S) " + Language.strCcCheckFailed;
-                txtCheck5.Text = Language.strCcGeckoFailed;
+                txtCheck5.Text = string.Format(Language.strCcGeckoFailed, GeneralAppInfo.UrlForum);
 
                 Runtime.MessageCollector.AddMessage(MessageClass.WarningMsg,
                     "Gecko " + Language.strCcNotInstalledProperly, true);

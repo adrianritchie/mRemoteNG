@@ -1,13 +1,14 @@
-using mRemoteNG.App;
-using mRemoteNG.Messages;
-using mRemoteNG.Tools;
 using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
+using mRemoteNG.App;
+using mRemoteNG.Messages;
 using mRemoteNG.Security.SymmetricEncryption;
-
+using mRemoteNG.Tools;
+using mRemoteNG.Tools.Cmdline;
+// ReSharper disable ArrangeAccessorOwnerBody
 
 namespace mRemoteNG.Connection.Protocol
 {
@@ -22,13 +23,16 @@ namespace mRemoteNG.Connection.Protocol
 
         protected Putty_SSHVersion PuttySSHVersion { private get; set; }
 
-	    private IntPtr PuttyHandle { get; set; }
+	    public IntPtr PuttyHandle { get; set; }
 
 	    private Process PuttyProcess { get; set; }
 
 	    public static string PuttyPath { get; set; }
 
-	    public bool Focused => NativeMethods.GetForegroundWindow() == PuttyHandle;
+	    public bool Focused
+	    {
+	        get { return NativeMethods.GetForegroundWindow() == PuttyHandle; }
+	    }
 
 	    #endregion
 
@@ -67,24 +71,26 @@ namespace mRemoteNG.Connection.Protocol
 					{
 						var username = "";
 						var password = "";
-								
-						if (!string.IsNullOrEmpty(InterfaceControl.Info.Username))
+
+						if (!string.IsNullOrEmpty(InterfaceControl.Info?.Username))
 						{
 							username = InterfaceControl.Info.Username;
 						}
 						else
 						{
-							if (Settings.Default.EmptyCredentials == "windows")
-							{
-								username = Environment.UserName;
-							}
-							else if (Settings.Default.EmptyCredentials == "custom")
-							{
-								username = Settings.Default.DefaultUsername;
-							}
+						    // ReSharper disable once SwitchStatementMissingSomeCases
+						    switch (Settings.Default.EmptyCredentials)
+						    {
+						        case "windows":
+						            username = Environment.UserName;
+						            break;
+						        case "custom":
+						            username = Settings.Default.DefaultUsername;
+						            break;
+						    }
 						}
-								
-						if (!string.IsNullOrEmpty(InterfaceControl.Info.Password))
+						
+						if (!string.IsNullOrEmpty(InterfaceControl.Info?.Password))
 						{
 							password = InterfaceControl.Info.Password;
 						}
@@ -96,7 +102,7 @@ namespace mRemoteNG.Connection.Protocol
                                 password = cryptographyProvider.Decrypt(Settings.Default.DefaultPassword, Runtime.EncryptionKey);
 							}
 						}
-								
+						
 						arguments.Add("-" + (int)PuttySSHVersion);
 								
 						if (((int)Force & (int)ConnectionInfo.Force.NoCredentials) != (int)ConnectionInfo.Force.NoCredentials)
@@ -127,10 +133,10 @@ namespace mRemoteNG.Connection.Protocol
 				PuttyProcess.Exited += ProcessExited;
 						
 				PuttyProcess.Start();
-				PuttyProcess.WaitForInputIdle(Convert.ToInt32(Settings.Default.MaxPuttyWaitTime * 1000));
+				PuttyProcess.WaitForInputIdle(Settings.Default.MaxPuttyWaitTime * 1000);
 						
 				var startTicks = Environment.TickCount;
-				while (PuttyHandle.ToInt32() == 0 & Environment.TickCount < startTicks + (Settings.Default.MaxPuttyWaitTime * 1000))
+				while (PuttyHandle.ToInt32() == 0 & Environment.TickCount < startTicks + Settings.Default.MaxPuttyWaitTime * 1000)
 				{
 					if (_isPuttyNg)
 					{
@@ -193,7 +199,7 @@ namespace mRemoteNG.Connection.Protocol
 				{
 					return;
 				}
-                NativeMethods.MoveWindow(PuttyHandle, Convert.ToInt32(-SystemInformation.FrameBorderSize.Width), Convert.ToInt32(-(SystemInformation.CaptionHeight + SystemInformation.FrameBorderSize.Height)), InterfaceControl.Width + (SystemInformation.FrameBorderSize.Width * 2), InterfaceControl.Height + SystemInformation.CaptionHeight + (SystemInformation.FrameBorderSize.Height * 2), true);
+                NativeMethods.MoveWindow(PuttyHandle, -SystemInformation.FrameBorderSize.Width, -(SystemInformation.CaptionHeight + SystemInformation.FrameBorderSize.Height), InterfaceControl.Width + SystemInformation.FrameBorderSize.Width * 2, InterfaceControl.Height + SystemInformation.CaptionHeight + SystemInformation.FrameBorderSize.Height * 2, true);
 			}
 			catch (Exception ex)
 			{

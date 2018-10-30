@@ -4,16 +4,20 @@ using System.Linq;
 using System.Web;
 using mRemoteNG.Connection;
 using mRemoteNG.Tree.Root;
-
+using System.Text;
+// ReSharper disable ArrangeAccessorOwnerBody
 
 namespace mRemoteNG.Config.Putty
 {
     public abstract class AbstractPuttySessionsProvider
 	{
         public virtual RootPuttySessionsNodeInfo RootInfo { get; } = new RootPuttySessionsNodeInfo();
-        protected virtual List<PuttySessionInfo> Sessions => RootInfo.Children.OfType<PuttySessionInfo>().ToList();
+        protected virtual List<PuttySessionInfo> Sessions
+        {
+            get { return RootInfo.Children.OfType<PuttySessionInfo>().ToList(); }
+        }
 
-        #region Public Methods
+	    #region Public Methods
         public abstract string[] GetSessionNames(bool raw = false);
 		public abstract PuttySessionInfo GetSession(string sessionName);
 		
@@ -43,7 +47,7 @@ namespace mRemoteNG.Config.Putty
         private IEnumerable<PuttySessionInfo> GetSessionToRemove(IEnumerable<string> sessionNamesFromProvider)
         {
             var currentlyKnownSessionNames = Sessions.Select(session => session.Name);
-            var normalizedSessionNames = sessionNamesFromProvider.Select(HttpUtility.UrlDecode);
+            var normalizedSessionNames = sessionNamesFromProvider.Select(name => HttpUtility.UrlDecode(name, Encoding.GetEncoding("iso-8859-1")));
             var sessionNamesToRemove = currentlyKnownSessionNames.Except(normalizedSessionNames);
             return Sessions.Where(session => sessionNamesToRemove.Contains(session.Name));
         }

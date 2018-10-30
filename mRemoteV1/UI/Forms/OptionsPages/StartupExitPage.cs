@@ -2,16 +2,17 @@ using System;
 
 namespace mRemoteNG.UI.Forms.OptionsPages
 {
-    public partial class StartupExitPage
+    public sealed partial class StartupExitPage
     {
         public StartupExitPage()
         {
             InitializeComponent();
+            ApplyTheme();
         }
 
         public override string PageName
         {
-            get { return Language.strStartupExit; }
+            get => Language.strStartupExit;
             set { }
         }
 

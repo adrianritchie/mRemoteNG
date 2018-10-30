@@ -1,32 +1,30 @@
 using System.Windows.Forms;
 using mRemoteNG.App;
 using mRemoteNG.UI.Forms.Input;
+using mRemoteNG.UI.Panels;
 
 namespace mRemoteNG.UI.Forms
 {
 	public partial class frmChoosePanel
 	{
+	    private readonly PanelAdder _panelAdder;
+
 		public frmChoosePanel()
 		{
 			InitializeComponent();
+            _panelAdder = new PanelAdder();
 		}
         public string Panel
 		{
-			get
-			{
-				return cbPanels.SelectedItem.ToString();
-			}
-			set
-			{
-				cbPanels.SelectedItem = value;
-			}
-		}
+			get => cbPanels.SelectedItem.ToString();
+            set => cbPanels.SelectedItem = value;
+        }
 
 	    private void frmChoosePanel_Load(object sender, System.EventArgs e)
 		{
 			ApplyLanguage();
-			
-			AddAvailablePanels();
+		    ApplyTheme();
+		    AddAvailablePanels();
 		}
 		
 		private void ApplyLanguage()
@@ -34,15 +32,23 @@ namespace mRemoteNG.UI.Forms
 			btnOK.Text = Language.strButtonOK;
 			lblDescription.Text = Language.strLabelSelectPanel;
 			btnNew.Text = Language.strButtonNew;
-			btnCancel.Text = Language.strButtonCancel;
 			Text = Language.strTitleSelectPanel;
 		}
-		
-		private void AddAvailablePanels()
+
+	    private void ApplyTheme()
+	    {
+            if (!Themes.ThemeManager.getInstance().ThemingActive) return;
+            BackColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Background");
+            ForeColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Foreground");
+            lblDescription.BackColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Background");
+            lblDescription.ForeColor = Themes.ThemeManager.getInstance().ActiveTheme.ExtendedPalette.getColor("Dialog_Foreground");
+        }
+
+        private void AddAvailablePanels()
 		{
 			cbPanels.Items.Clear();
 			
-			for (int i = 0; i <= Runtime.WindowList.Count - 1; i++)
+			for (var i = 0; i <= Runtime.WindowList.Count - 1; i++)
 			{
                 cbPanels.Items.Add(Runtime.WindowList[i].Text.Replace("&&", "&"));
 			}
@@ -62,25 +68,18 @@ namespace mRemoteNG.UI.Forms
 
 	    private void btnNew_Click(object sender, System.EventArgs e)
 		{
-		    string pnlName = Language.strNewPanel;
-			
-			if (input.InputBox(Language.strNewPanel, Language.strPanelName + ":", ref pnlName) == DialogResult.OK && !string.IsNullOrEmpty(pnlName))
-			{
-                Runtime.AddPanel(pnlName);
-				AddAvailablePanels();
-				cbPanels.SelectedItem = pnlName;
-				cbPanels.Focus();
-			}
+		    var pnlName = Language.strNewPanel;
+
+		    if (input.InputBox(Language.strNewPanel, Language.strPanelName + ":", ref pnlName) != DialogResult.OK || string.IsNullOrEmpty(pnlName)) return;
+		    _panelAdder.AddPanel(pnlName);
+		    AddAvailablePanels();
+		    cbPanels.SelectedItem = pnlName;
+		    cbPanels.Focus();
 		}
 
 	    private void btnOK_Click(object sender, System.EventArgs e)
 		{
             DialogResult = DialogResult.OK;
-		}
-
-	    private void btnCancel_Click(object sender, System.EventArgs e)
-		{
-            DialogResult = DialogResult.Cancel;
 		}
 	}
 }

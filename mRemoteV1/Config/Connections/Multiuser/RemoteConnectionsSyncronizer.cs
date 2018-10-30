@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Timers;
 using mRemoteNG.App;
+// ReSharper disable ArrangeAccessorOwnerBody
 
 namespace mRemoteNG.Config.Connections.Multiuser
 {
@@ -8,17 +9,16 @@ namespace mRemoteNG.Config.Connections.Multiuser
     {
         private readonly Timer _updateTimer;
         private readonly IConnectionsUpdateChecker _updateChecker;
-        private readonly ConnectionsLoader _connectionsLoader;
-        private readonly ConnectionsSaver _connectionsSaver;
 
-        public double TimerIntervalInMilliseconds => _updateTimer.Interval;
+        public double TimerIntervalInMilliseconds
+        {
+            get { return _updateTimer.Interval; }
+        }
 
         public RemoteConnectionsSyncronizer(IConnectionsUpdateChecker updateChecker)
         {
             _updateChecker = updateChecker;
             _updateTimer = new Timer(3000);
-            _connectionsLoader = new ConnectionsLoader { UseDatabase = mRemoteNG.Settings.Default.UseSQLServer };
-            _connectionsSaver = new ConnectionsSaver { SaveFormat = ConnectionsSaver.Format.SQL };
             SetEventListeners();
         }
 
@@ -31,26 +31,31 @@ namespace mRemoteNG.Config.Connections.Multiuser
             ConnectionsUpdateAvailable += Load;
         }
 
-        public void Load()
-        {
-            Runtime.ConnectionTreeModel = _connectionsLoader.LoadConnections(false);
-        }
-
         private void Load(object sender, ConnectionsUpdateAvailableEventArgs args)
         {
-            Load();
+            Runtime.ConnectionsService.LoadConnections(true, false, "");
             args.Handled = true;
         }
 
-        public void Save()
+        public void Enable()
         {
-            _connectionsSaver.SaveConnections();
+            _updateTimer.Start();
         }
 
-        public void Enable() => _updateTimer.Start();
-        public void Disable() => _updateTimer.Stop();
-        public bool IsUpdateAvailable() => _updateChecker.IsUpdateAvailable();
-        public void IsUpdateAvailableAsync() => _updateChecker.IsUpdateAvailableAsync();
+        public void Disable()
+        {
+            _updateTimer.Stop();
+        }
+
+        public bool IsUpdateAvailable()
+        {
+            return _updateChecker.IsUpdateAvailable();
+        }
+
+        public void IsUpdateAvailableAsync()
+        {
+            _updateChecker.IsUpdateAvailableAsync();
+        }
 
 
         private void OnUpdateCheckStarted(object sender, EventArgs eventArgs)

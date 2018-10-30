@@ -1,5 +1,4 @@
 ﻿using mRemoteNG.Connection.Protocol.Http;
-//using mRemoteNG.Connection.Protocol.ICA;
 using mRemoteNG.Connection.Protocol.RAW;
 using mRemoteNG.Connection.Protocol.RDP;
 using mRemoteNG.Connection.Protocol.Rlogin;
@@ -14,12 +13,16 @@ namespace mRemoteNG.Connection.Protocol
     {
         public ProtocolBase CreateProtocol(ConnectionInfo connectionInfo)
         {
-            ProtocolBase newProtocol = default(ProtocolBase);
+            var newProtocol = default(ProtocolBase);
+            // ReSharper disable once SwitchStatementMissingSomeCases
 			switch (connectionInfo.Protocol)
 			{
 				case ProtocolType.RDP:
-					newProtocol = new ProtocolRDP();
-					((ProtocolRDP) newProtocol).tmrReconnect.Elapsed += ((ProtocolRDP) newProtocol).tmrReconnect_Elapsed;
+					newProtocol = new RdpProtocol
+					{
+					    LoadBalanceInfoUseUtf8 = Settings.Default.RdpLoadBalanceInfoUseUtf8
+                    };
+					((RdpProtocol) newProtocol).tmrReconnect.Elapsed += ((RdpProtocol) newProtocol).tmrReconnect_Elapsed;
 					break;
 				case ProtocolType.VNC:
 					newProtocol = new ProtocolVNC();
@@ -37,7 +40,7 @@ namespace mRemoteNG.Connection.Protocol
 					newProtocol = new ProtocolRlogin();
 					break;
 				case ProtocolType.RAW:
-					newProtocol = new ProtocolRAW();
+					newProtocol = new RawProtocol();
 					break;
 				case ProtocolType.HTTP:
 					newProtocol = new ProtocolHTTP(connectionInfo.RenderingEngine);
@@ -45,10 +48,10 @@ namespace mRemoteNG.Connection.Protocol
 				case ProtocolType.HTTPS:
 					newProtocol = new ProtocolHTTPS(connectionInfo.RenderingEngine);
 					break;
-				case ProtocolType.ICA:
-					//newProtocol = new ProtocolICA();
-					//((ProtocolICA) newProtocol).tmrReconnect.Elapsed += ((ProtocolICA) newProtocol).tmrReconnect_Elapsed;
-					break;
+				//case ProtocolType.ICA:
+				//	newProtocol = new IcaProtocol();
+				//	((IcaProtocol) newProtocol).tmrReconnect.Elapsed += ((IcaProtocol) newProtocol).tmrReconnect_Elapsed;
+				//	break;
 				case ProtocolType.IntApp:
 					newProtocol = new IntegratedProgram();
 					if (connectionInfo.ExtApp == "")

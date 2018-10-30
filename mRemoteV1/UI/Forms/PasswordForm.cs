@@ -1,63 +1,85 @@
 using System;
+using System.Security;
 using System.Windows.Forms;
-using mRemoteNG.UI.Controls;
+using mRemoteNG.Security;
+using mRemoteNG.Tools;
 
 namespace mRemoteNG.UI.Forms
 {
-    public partial class PasswordForm
+    public partial class PasswordForm : IKeyProvider
 	{
-        private string _passwordName;
+        private readonly string _passwordName;
+        private SecureString _password = new SecureString();
 
-	    #region Public Properties
+        /// <summary>
+        /// Puts the dialog into the New Password mode. An extra
+        /// password box is shown which must match the first password
+        /// to continue.
+        /// </summary>
+	    private bool NewPasswordMode { get; }
 
-	    private bool Verify { get; set; }
-
-	    public string Password => Verify ? txtVerify.Text : txtPassword.Text;
-
-	    #endregion
-		
-        #region Constructors
-		public PasswordForm(string passwordName = null, bool verify = true)
+        /// <summary>
+        /// Creates a new password form for entering or setting a password.
+        /// </summary>
+        /// <param name="passwordName"></param>
+        /// <param name="newPasswordMode">
+        /// Puts the dialog into the New Password mode. An extra
+        /// password box is shown which must match the first password
+        /// to continue.
+        /// </param>
+		public PasswordForm(string passwordName = null, bool newPasswordMode = true)
 		{
-			// This call is required by the designer.
 			InitializeComponent();
-				
-			// Add any initialization after the InitializeComponent() call.
 			_passwordName = passwordName;
-			Verify = verify;
+			NewPasswordMode = newPasswordMode;
 		}
-        #endregion
-		
-        #region Event Handlers
 
-	    private void frmPassword_Load(object sender, EventArgs e)
+        /// <summary>
+        /// Dispaly a dialog box requesting that the user 
+        /// enter their password.
+        /// </summary>
+        /// <returns></returns>
+        public Optional<SecureString> GetKey()
+        {
+            var dialog = ShowDialog();
+            return dialog == DialogResult.OK
+                ? _password
+                : Optional<SecureString>.Empty;
+        }
+
+        #region Event Handlers
+        private void frmPassword_Load(object sender, EventArgs e)
 		{
 			ApplyLanguage();
 
-		    if (Verify) return;
+		    if (NewPasswordMode) return;
 		    Height = Height - (txtVerify.Top - txtPassword.Top);
 		    lblVerify.Visible = false;
 		    txtVerify.Visible = false;
 		}
 
-	    private void btnCancel_Click(object sender, EventArgs e)
+        private void PasswordForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            _password = txtPassword.Text.ConvertToSecureString();
+            txtPassword.Text = "";
+            txtVerify.Text = "";
+            if (NewPasswordMode) return;
+            Height = Height + (txtVerify.Top - txtPassword.Top);
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
 		{
 			DialogResult = DialogResult.Cancel;
             Close();
 		}
 
 	    private void btnOK_Click(object sender, EventArgs e)
-		{
-			if (Verify)
-			{
-				if (VerifyPassword())
-					DialogResult = DialogResult.OK;
-			}
-			else
-			{
-				DialogResult = DialogResult.OK;
-			}
-		}
+	    {
+            if (NewPasswordMode)
+	            VerifyNewPassword();
+
+	        DialogResult = DialogResult.OK;
+	    }
 
 	    private void txtPassword_TextChanged(object sender, EventArgs e)
 		{
@@ -72,30 +94,21 @@ namespace mRemoteNG.UI.Forms
 				
 			lblPassword.Text = Language.strLabelPassword;
 			lblVerify.Text = Language.strLabelVerify;
-				
 			btnCancel.Text = Language.strButtonCancel;
 			btnOK.Text = Language.strButtonOK;
 		}
 			
-		private bool VerifyPassword()
+		private bool VerifyNewPassword()
 		{
 			if (txtPassword.Text.Length >= 3)
 			{
 				if (txtPassword.Text == txtVerify.Text)
-				{
 					return true;
-				}
-				else
-				{
-					ShowStatus(Language.strPasswordStatusMustMatch);
-					return false;
-				}
+			    ShowStatus(Language.strPasswordStatusMustMatch);
+			    return false;
 			}
-			else
-			{
-				ShowStatus(Language.strPasswordStatusTooShort);
-				return false;
-			}
+		    ShowStatus(Language.strPasswordStatusTooShort);
+		    return false;
 		}
 			
 		private void ShowStatus(string status)

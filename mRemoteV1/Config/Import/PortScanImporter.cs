@@ -8,7 +8,7 @@ using mRemoteNG.Tools;
 
 namespace mRemoteNG.Config.Import
 {
-	public class PortScanImporter : IConnectionImporter
+	public class PortScanImporter : IConnectionImporter<IEnumerable<ScanHost>>
 	{
 	    private readonly ProtocolType _targetProtocolType;
 
@@ -17,17 +17,10 @@ namespace mRemoteNG.Config.Import
 	        _targetProtocolType = targetProtocolType;
 	    }
 
-        public void Import(object hosts, ContainerInfo destinationContainer)
-        {
-            var hostsAsEnumerableScanHost = hosts as IEnumerable<ScanHost>;
-            if (hostsAsEnumerableScanHost == null) return;
-            Import(hostsAsEnumerableScanHost, destinationContainer);
-        }
-
         public void Import(IEnumerable<ScanHost> hosts, ContainerInfo destinationContainer)
 		{
-			var deserializer = new PortScanDeserializer(hosts, _targetProtocolType);
-            var connectionTreeModel = deserializer.Deserialize();
+			var deserializer = new PortScanDeserializer(_targetProtocolType);
+            var connectionTreeModel = deserializer.Deserialize(hosts);
 
             var importedRootNode = connectionTreeModel.RootNodes.First();
             if (importedRootNode == null) return;

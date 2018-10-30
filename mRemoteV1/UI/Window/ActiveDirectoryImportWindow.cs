@@ -5,35 +5,37 @@ using WeifenLuo.WinFormsUI.Docking;
 using mRemoteNG.App;
 using mRemoteNG.Container;
 
-
 namespace mRemoteNG.UI.Window
 {
     public partial class ActiveDirectoryImportWindow
     {
-        private string CurrentDomain;
+        private string _currentDomain;
 
-        #region Constructors
-
-        public ActiveDirectoryImportWindow(DockContent panel)
+        public ActiveDirectoryImportWindow()
         {
             InitializeComponent();
-            Runtime.FontOverride(this);
+            FontOverrider.FontOverride(this);
             WindowType = WindowType.ActiveDirectoryImport;
-            DockPnl = panel;
-            CurrentDomain = Environment.UserDomainName;
+            DockPnl = new DockContent();
+            _currentDomain = Environment.UserDomainName;
+            ApplyTheme();
         }
 
-        #endregion
+        private new void ApplyTheme()
+        {
+            base.ApplyTheme();
+        }
 
         #region Private Methods
+         
 
         #region Event Handlers
 
         private void ADImport_Load(object sender, EventArgs e)
         {
             ApplyLanguage();
-            txtDomain.Text = CurrentDomain;
-            ActiveDirectoryTree.Domain = CurrentDomain;
+            txtDomain.Text = _currentDomain;
+            ActiveDirectoryTree.Domain = _currentDomain;
             EnableDisableImportButton();
             
             // Domain doesn't refresh on load, so it defaults to DOMAIN without this...
@@ -47,7 +49,7 @@ namespace mRemoteNG.UI.Window
             if (selectedNode != null)
                 importDestination = selectedNode as ContainerInfo ?? selectedNode.Parent;
             else
-                importDestination = Runtime.ConnectionTreeModel.RootNodes.First();
+                importDestination = Runtime.ConnectionsService.ConnectionTreeModel.RootNodes.First();
 
             Import.ImportFromActiveDirectory(ActiveDirectoryTree.ADPath, importDestination, chkSubOU.Checked);
         }
@@ -83,13 +85,15 @@ namespace mRemoteNG.UI.Window
         {
             btnImport.Text = Language.strButtonImport;
             lblDomain.Text = Language.strLabelDomain;
+            chkSubOU.Text = Language.strImportSubOUs;
             btnChangeDomain.Text = Language.strButtonChange;
+            btnClose.Text = Language.strButtonClose;
         }
 
         private void ChangeDomain()
         {
-            CurrentDomain = txtDomain.Text;
-            ActiveDirectoryTree.Domain = CurrentDomain;
+            _currentDomain = txtDomain.Text;
+            ActiveDirectoryTree.Domain = _currentDomain;
             ActiveDirectoryTree.Refresh();
         }
 

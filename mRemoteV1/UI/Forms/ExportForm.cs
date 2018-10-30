@@ -2,15 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows.Forms;
-using mRemoteNG.App;
 using mRemoteNG.Config.Connections;
 using mRemoteNG.Connection;
 using mRemoteNG.Container;
+using mRemoteNG.Themes;
 
 namespace mRemoteNG.UI.Forms
 {
     public partial class ExportForm
     {
+        private ThemeManager _themeManager;
+
         #region Public Properties
         public string FileName
 		{
@@ -24,12 +26,12 @@ namespace mRemoteNG.UI.Forms
 			}
 		}
 			
-        public ConnectionsSaver.Format SaveFormat
+        public SaveFormat SaveFormat
 		{
 			get
 			{
 			    var exportFormat = cboFileFormat.SelectedItem as ExportFormat;
-			    return exportFormat?.Format ?? ConnectionsSaver.Format.mRXML;
+			    return exportFormat?.Format ?? SaveFormat.mRXML;
 			}
             set
 			{
@@ -47,20 +49,13 @@ namespace mRemoteNG.UI.Forms
 		{
 			get
 			{
-				if (rdoExportSelectedFolder.Checked)
-				{
+			    if (rdoExportSelectedFolder.Checked)
 					return ExportScope.SelectedFolder;
-				}
-				else if (rdoExportSelectedConnection.Checked)
-				{
-					return ExportScope.SelectedConnection;
-				}
-				else
-				{
-					return ExportScope.Everything;
-				}
+			    if (rdoExportSelectedConnection.Checked)
+			        return ExportScope.SelectedConnection;
+			    return ExportScope.Everything;
 			}
-			set
+            set
 			{
 				switch (value)
 				{
@@ -142,7 +137,13 @@ namespace mRemoteNG.UI.Forms
 				chkDomain.Checked = value;
 			}
 		}
-			
+
+        public bool IncludeAssignedCredential
+        {
+            get { return chkAssignedCredential.Checked; }
+            set { chkAssignedCredential.Checked = value; }
+        }
+
         public bool IncludeInheritance
 		{
 			get
@@ -160,27 +161,24 @@ namespace mRemoteNG.UI.Forms
 		public ExportForm()
 		{
 			InitializeComponent();
-				
-			Runtime.FontOverride(this);
-				
+            FontOverrider.FontOverride(this);
 			SelectedFolder = null;
 			SelectedConnection = null;
-				
 			btnOK.Enabled = false;
 		}
         #endregion
 			
         #region Private Methods
         #region Event Handlers
-
         private void ExportForm_Load(object sender, EventArgs e)
 		{
 			cboFileFormat.Items.Clear();
-            cboFileFormat.Items.Add(new ExportFormat(ConnectionsSaver.Format.mRXML));
-            cboFileFormat.Items.Add(new ExportFormat(ConnectionsSaver.Format.mRCSV));
+            cboFileFormat.Items.Add(new ExportFormat(SaveFormat.mRXML));
+            cboFileFormat.Items.Add(new ExportFormat(SaveFormat.mRCSV));
 			cboFileFormat.SelectedIndex = 0;
-				
-			ApplyLanguage();
+            ApplyTheme();
+            ThemeManager.getInstance().ThemeChanged += ApplyTheme;
+            ApplyLanguage();
 		}
 
         private void txtFileName_TextChanged(object sender, EventArgs e)
@@ -213,7 +211,7 @@ namespace mRemoteNG.UI.Forms
 
         private void SelectFileTypeBasedOnSaveFormat(FileDialog saveFileDialog)
         {
-            saveFileDialog.FilterIndex = SaveFormat == ConnectionsSaver.Format.mRCSV ? 2 : 1;
+            saveFileDialog.FilterIndex = SaveFormat == SaveFormat.mRCSV ? 2 : 1;
         }
 
         private void btnOK_Click(object sender, EventArgs e)
@@ -225,9 +223,39 @@ namespace mRemoteNG.UI.Forms
 		{
 			DialogResult = DialogResult.Cancel;
 		}
+
+        private void cboFileformat_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // should only be active if we are using the credential manager feature
+            //if (SaveFormat == SaveFormat.mRXML)
+            //{
+            //    chkUsername.Enabled = false;
+            //    chkPassword.Enabled = false;
+            //    chkDomain.Enabled = false;
+            //    chkAssignedCredential.Enabled = true;
+            //}
+            //else
+            //{
+            //    chkUsername.Enabled = true;
+            //    chkPassword.Enabled = true;
+            //    chkDomain.Enabled = true;
+            //    chkAssignedCredential.Enabled = false;
+            //}
+        }
         #endregion
 			
-		private void ApplyLanguage()
+        private void ApplyTheme()
+        {
+            _themeManager = ThemeManager.getInstance();
+            if(_themeManager.ThemingActive)
+            {
+                BackColor = _themeManager.ActiveTheme.ExtendedPalette.getColor("Dialog_Background");
+                ForeColor = _themeManager.ActiveTheme.ExtendedPalette.getColor("Dialog_Foreground");
+            }
+        }
+
+
+        private void ApplyLanguage()
 		{
 			Text = Language.strExport;
 				
@@ -245,6 +273,7 @@ namespace mRemoteNG.UI.Forms
 			chkUsername.Text = Language.strCheckboxUsername;
 			chkPassword.Text = Language.strCheckboxPassword;
 			chkDomain.Text = Language.strCheckboxDomain;
+		    chkAssignedCredential.Text = Language.strAssignedCredential;
 			chkInheritance.Text = Language.strCheckboxInheritance;
 			lblUncheckProperties.Text = Language.strUncheckProperties;
 				
@@ -268,12 +297,12 @@ namespace mRemoteNG.UI.Forms
 		{
             #region Public Properties
 
-		    public ConnectionsSaver.Format Format { get; }
+		    public SaveFormat Format { get; }
 
 		    #endregion
 				
             #region Constructors
-			public ExportFormat(ConnectionsSaver.Format format)
+			public ExportFormat(SaveFormat format)
 			{
 				Format = format;
 			}
@@ -284,9 +313,9 @@ namespace mRemoteNG.UI.Forms
 			{
 				switch (Format)
 				{
-					case ConnectionsSaver.Format.mRXML:
+					case SaveFormat.mRXML:
 						return Language.strMremoteNgXml;
-                    case ConnectionsSaver.Format.mRCSV:
+                    case SaveFormat.mRCSV:
 						return Language.strMremoteNgCsv;
 					default:
 						return Format.ToString();

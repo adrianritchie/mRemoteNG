@@ -1,166 +1,66 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Drawing;
 using System.Globalization;
-using System.IO;
-using System.Management;
-using System.Threading;
-using System.Windows.Forms;
 using mRemoteNG.App.Info;
+using mRemoteNG.App.Initialization;
 using mRemoteNG.App.Update;
 using mRemoteNG.Config.Connections;
 using mRemoteNG.Config.Connections.Multiuser;
 using mRemoteNG.Connection;
 using mRemoteNG.Messages;
 using mRemoteNG.Tools;
+using mRemoteNG.Tools.Cmdline;
 using mRemoteNG.UI;
 using mRemoteNG.UI.Forms;
+
 
 namespace mRemoteNG.App
 {
     public class Startup
     {
         private AppUpdater _appUpdate;
+        private readonly ConnectionIconLoader _connectionIconLoader;
+        private readonly FrmMain _frmMain = FrmMain.Default;
 
         public static Startup Instance { get; } = new Startup();
 
         private Startup()
         {
             _appUpdate = new AppUpdater();
+            _connectionIconLoader = new ConnectionIconLoader(GeneralAppInfo.HomePath + "\\Icons\\");
         }
 
         static Startup()
         {
         }
 
-        public void InitializeProgram()
+        public void InitializeProgram(MessageCollector messageCollector)
         {
             Debug.Print("---------------------------" + Environment.NewLine + "[START] - " + Convert.ToString(DateTime.Now, CultureInfo.InvariantCulture));
-            LogStartupData();
-            CompatibilityChecker.CheckCompatibility();
-            ParseCommandLineArgs();
+            var startupLogger = new StartupDataLogger(messageCollector);
+            startupLogger.LogStartupData();
+            CompatibilityChecker.CheckCompatibility(messageCollector);
+            ParseCommandLineArgs(messageCollector);
             IeBrowserEmulation.Register();
-            GetConnectionIcons();
+            _connectionIconLoader.GetConnectionIcons();
+            DefaultConnectionInfo.Instance.LoadFrom(Settings.Default, a=>"ConDefault"+a);
+            DefaultConnectionInheritance.Instance.LoadFrom(Settings.Default, a=>"InhDefault"+a);
         }
 
-        private static void GetConnectionIcons()
+        private static void ParseCommandLineArgs(MessageCollector messageCollector)
         {
-            var iPath = GeneralAppInfo.HomePath + "\\Icons\\";
-            if (Directory.Exists(iPath) == false)
-            {
-                return;
-            }
-
-            foreach (var f in Directory.GetFiles(iPath, "*.ico", SearchOption.AllDirectories))
-            {
-                var fInfo = new FileInfo(f);
-                Array.Resize(ref ConnectionIcon.Icons, ConnectionIcon.Icons.Length + 1);
-                ConnectionIcon.Icons.SetValue(fInfo.Name.Replace(".ico", ""), ConnectionIcon.Icons.Length - 1);
-            }
+            var interpreter = new StartupArgumentsInterpreter(messageCollector);
+            interpreter.ParseArguments(Environment.GetCommandLineArgs());
         }
 
-        private static void LogStartupData()
+        public void CreateConnectionsProvider(MessageCollector messageCollector)
         {
-            if (!Settings.Default.WriteLogFile) return;
-            LogApplicationData();
-            LogCmdLineArgs();
-            LogSystemData();
-            LogCLRData();
-            LogCultureData();
-        }
-
-        private static void LogSystemData()
-        {
-            var osData = GetOperatingSystemData();
-            var architecture = GetArchitectureData();
-            Logger.Instance.InfoFormat(string.Join(" ", Array.FindAll(new[] { osData, architecture }, s => !string.IsNullOrEmpty(s))));
-        }
-
-        private static string GetOperatingSystemData()
-        {
-            var osVersion = string.Empty;
-            var servicePack = string.Empty;
-
-            try
-            {
-                foreach (var o in new ManagementObjectSearcher("SELECT * FROM Win32_OperatingSystem WHERE Primary=True").Get())
-                {
-                    var managementObject = (ManagementObject) o;
-                    osVersion = Convert.ToString(managementObject.GetPropertyValue("Caption")).Trim();
-                    servicePack = GetOSServicePack(servicePack, managementObject);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Instance.WarnFormat($"Error retrieving operating system information from WMI. {ex.Message}");
-            }
-            var osData = string.Join(" ", osVersion, servicePack);
-            return osData;
-        }
-
-        private static string GetOSServicePack(string servicePack, ManagementObject managementObject)
-        {
-            var servicePackNumber = Convert.ToInt32(managementObject.GetPropertyValue("ServicePackMajorVersion"));
-            if (servicePackNumber != 0)
-            {
-                servicePack = $"Service Pack {servicePackNumber}";
-            }
-            return servicePack;
-        }
-
-        private static string GetArchitectureData()
-        {
-            var architecture = string.Empty;
-            try
-            {
-                foreach (var o in new ManagementObjectSearcher("SELECT * FROM Win32_Processor WHERE DeviceID=\'CPU0\'").Get())
-                {
-                    var managementObject = (ManagementObject) o;
-                    var addressWidth = Convert.ToInt32(managementObject.GetPropertyValue("AddressWidth"));
-                    architecture = $"{addressWidth}-bit";
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Instance.WarnFormat($"Error retrieving operating system address width from WMI. {ex.Message}");
-            }
-            return architecture;
-        }
-
-        private static void LogApplicationData()
-        {
-#if !PORTABLE
-            Logger.Instance.InfoFormat($"{Application.ProductName} {Application.ProductVersion} starting.");
-#else
-            Logger.Instance.InfoFormat(
-                $"{Application.ProductName} {Application.ProductVersion} {Language.strLabelPortableEdition} starting.");
-#endif
-        }
-
-        private static void LogCmdLineArgs()
-        {
-            Logger.Instance.InfoFormat($"Command Line: {Environment.GetCommandLineArgs()}");
-        }
-
-        private static void LogCLRData()
-        {
-            Logger.Instance.InfoFormat($"Microsoft .NET CLR {Environment.Version}");
-        }
-
-        private static void LogCultureData()
-        {
-            Logger.Instance.InfoFormat(
-                $"System Culture: {Thread.CurrentThread.CurrentUICulture.Name}/{Thread.CurrentThread.CurrentUICulture.NativeName}");
-        }
-
-        public void CreateConnectionsProvider()
-        {
-            frmMain.Default.AreWeUsingSqlServerForSavingConnections = Settings.Default.UseSQLServer;
-
+            messageCollector.AddMessage(MessageClass.DebugMsg, "Determining if we need a database syncronizer");
             if (!Settings.Default.UseSQLServer) return;
-            Runtime.RemoteConnectionsSyncronizer = new RemoteConnectionsSyncronizer(new SqlConnectionsUpdateChecker());
-            Runtime.RemoteConnectionsSyncronizer.Enable();
+            messageCollector.AddMessage(MessageClass.DebugMsg, "Creating database syncronizer");
+            Runtime.ConnectionsService.RemoteConnectionsSyncronizer = new RemoteConnectionsSyncronizer(new SqlConnectionsUpdateChecker());
+            Runtime.ConnectionsService.RemoteConnectionsSyncronizer.Enable();
         }
 
         public void CheckForUpdate()
@@ -186,9 +86,9 @@ namespace mRemoteNG.App
 
         private void GetUpdateInfoCompleted(object sender, AsyncCompletedEventArgs e)
         {
-            if (frmMain.Default.InvokeRequired)
+            if (_frmMain.InvokeRequired)
             {
-                frmMain.Default.Invoke(new AsyncCompletedEventHandler(GetUpdateInfoCompleted), sender, e);
+                _frmMain.Invoke(new AsyncCompletedEventHandler(GetUpdateInfoCompleted), sender, e);
                 return;
             }
 
@@ -213,140 +113,6 @@ namespace mRemoteNG.App
             catch (Exception ex)
             {
                 Runtime.MessageCollector.AddExceptionMessage("GetUpdateInfoCompleted() failed.", ex);
-            }
-        }
-
-        /// <summary>
-        /// Returns a path to a file connections XML file for a given absolute or relative path
-        /// </summary>
-        /// <param name="ConsParam">The absolute or relative path to the connection XML file</param>
-        /// <returns>string or null</returns>
-        private static string GetCustomConsPath(string ConsParam)
-        {
-            // early exit condition
-            if (string.IsNullOrEmpty(ConsParam))
-                return null;
-
-            if (File.Exists(ConsParam))
-                return ConsParam;
-
-            // trim invalid characters for the Combine method (see: https://msdn.microsoft.com/en-us/library/fyy7a5kt.aspx#Anchor_2)
-            ConsParam = ConsParam.Trim().TrimStart('\\').Trim();
-
-            // fallback paths
-            if (File.Exists(Path.Combine(GeneralAppInfo.HomePath, ConsParam)))
-                return GeneralAppInfo.HomePath + Path.DirectorySeparatorChar + ConsParam;
-
-            if (File.Exists(Path.Combine(ConnectionsFileInfo.DefaultConnectionsPath, ConsParam)))
-                return ConnectionsFileInfo.DefaultConnectionsPath + Path.DirectorySeparatorChar + ConsParam;
-
-            // default case
-            return null;
-        }
-
-        private static void ParseCommandLineArgs()
-        {
-            try
-            {
-                var cmd = new CmdArgumentsInterpreter(Environment.GetCommandLineArgs());
-
-                var ConsParam = "";
-                if (cmd["cons"] != null)
-                {
-                    ConsParam = cmd["cons"];
-                }
-                if (cmd["c"] != null)
-                {
-                    ConsParam = cmd["c"];
-                }
-
-                var ResetPosParam = "";
-                if (cmd["resetpos"] != null)
-                {
-                    ResetPosParam = "resetpos";
-                }
-                if (cmd["rp"] != null)
-                {
-                    ResetPosParam = "rp";
-                }
-
-                var ResetPanelsParam = "";
-                if (cmd["resetpanels"] != null)
-                {
-                    ResetPanelsParam = "resetpanels";
-                }
-                if (cmd["rpnl"] != null)
-                {
-                    ResetPanelsParam = "rpnl";
-                }
-
-                var ResetToolbarsParam = "";
-                if (cmd["resettoolbar"] != null)
-                {
-                    ResetToolbarsParam = "resettoolbar";
-                }
-                if (cmd["rtbr"] != null)
-                {
-                    ResetToolbarsParam = "rtbr";
-                }
-
-                if (cmd["reset"] != null)
-                {
-                    ResetPosParam = "rp";
-                    ResetPanelsParam = "rpnl";
-                    ResetToolbarsParam = "rtbr";
-                }
-
-                var NoReconnectParam = "";
-                if (cmd["noreconnect"] != null)
-                {
-                    NoReconnectParam = "noreconnect";
-                }
-                if (cmd["norc"] != null)
-                {
-                    NoReconnectParam = "norc";
-                }
-
-                // Handle custom connection file location
-                var consPathFromParam = GetCustomConsPath(ConsParam);
-                if (consPathFromParam != null)
-                {
-                    Settings.Default.CustomConsPath = consPathFromParam;
-                    Settings.Default.LoadConsFromCustomLocation = true;
-                }
-
-                if (!string.IsNullOrEmpty(ResetPosParam))
-                {
-                    Settings.Default.MainFormKiosk = false;
-	                var newWidth = 900;
-	                var newHeight = 600;
-	                var newX = Screen.PrimaryScreen.WorkingArea.Width/2 - newWidth/2;
-	                var newY = Screen.PrimaryScreen.WorkingArea.Height/2 - newHeight/2;
-                    Settings.Default.MainFormLocation = new Point(newX, newY);
-                    Settings.Default.MainFormSize = new Size(newWidth, newHeight);
-                    Settings.Default.MainFormState = FormWindowState.Normal;
-                }
-
-                if (!string.IsNullOrEmpty(ResetPanelsParam))
-                {
-                    Settings.Default.ResetPanels = true;
-                }
-
-                if (!string.IsNullOrEmpty(NoReconnectParam))
-                {
-                    Settings.Default.NoReconnect = true;
-                }
-
-                if (!string.IsNullOrEmpty(ResetToolbarsParam))
-                {
-                    Settings.Default.ResetToolbars = true;
-                }
-
-                Settings.Default.Save();
-            }
-            catch (Exception ex)
-            {
-                Runtime.MessageCollector.AddMessage(MessageClass.ErrorMsg, Language.strCommandLineArgsCouldNotBeParsed + Environment.NewLine + ex.Message);
             }
         }
     }

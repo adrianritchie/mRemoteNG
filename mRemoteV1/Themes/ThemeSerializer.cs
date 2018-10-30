@@ -1,120 +1,67 @@
-using System.Collections.Generic;
-using System;
-using System.Drawing;
 using System.IO;
-using System.Xml;
-
+using WeifenLuo.WinFormsUI.Docking;
+using System.Linq;
 
 namespace mRemoteNG.Themes
 {
-	public class ThemeSerializer
+	public static class ThemeSerializer
 	{
-		public static void SaveToXmlFile(ThemeInfo themeInfo, string filename)
+	    /// <summary>
+	    /// Save the theme to file, name property is used as filename
+	    /// The baseTheme is used as a template, by copy that file and rewrite the extpalette values
+	    /// </summary>
+	    /// <param name="themeToSave"></param>
+	    /// <param name="baseTheme"></param>
+	    public static void SaveToXmlFile(ThemeInfo themeToSave,ThemeInfo baseTheme)
 		{
-		    var themeList = new List<ThemeInfo> {themeInfo};
-		    SaveToXmlFile(themeList, filename);
+            var oldURI = baseTheme.URI; 
+            var directoryName = Path.GetDirectoryName(oldURI); 
+            var toSaveURI = directoryName + Path.DirectorySeparatorChar + themeToSave.Name +  ".vstheme";
+            File.Copy(baseTheme.URI, toSaveURI);
+            themeToSave.URI = toSaveURI;
 		}
-			
-		public static void SaveToXmlFile(List<ThemeInfo> themes, string filename)
-		{
-			var tempFileName = Path.GetTempFileName();
-		    var xmlTextWriter = new XmlTextWriter(tempFileName, System.Text.Encoding.UTF8)
-		    {
-		        Formatting = Formatting.Indented,
-		        Indentation = 4
-		    };
 
+        public static void DeleteFile(ThemeInfo themeToDelete)
+        {
+            File.Delete(themeToDelete.URI);
+        }
+        
+        /// <summary>
+        /// Takes a theme in memory and update the color values that the user might have changed 
+        /// </summary>
+        /// <param name="themeToUpdate"></param>
+        public static void UpdateThemeXMLValues(ThemeInfo themeToUpdate)
+        {
+            var bytesIn = File.ReadAllBytes(themeToUpdate.URI);
+            var manipulator = new MremoteNGPaletteManipulator(bytesIn, themeToUpdate.ExtendedPalette);
+            var bytesOut = manipulator.mergePalette(themeToUpdate.ExtendedPalette);
+            File.WriteAllBytes(themeToUpdate.URI, bytesOut);
+        }
 
-		    xmlTextWriter.WriteStartDocument();
-				
-			xmlTextWriter.WriteStartElement("mRemoteNG");
-				
-			xmlTextWriter.WriteStartElement("FileInfo");
-			xmlTextWriter.WriteAttributeString("Version", "1.0");
-			xmlTextWriter.WriteElementString("FileType", "Theme");
-			xmlTextWriter.WriteElementString("FileTypeVersion", "1.0");
-			xmlTextWriter.WriteEndElement(); // FileInfo
-				
-			var themeType = (new ThemeInfo()).GetType();
-			var colorType = (new Color()).GetType();
-		    foreach (var themeInfo in themes)
-			{
-				xmlTextWriter.WriteStartElement("Theme");
-				xmlTextWriter.WriteAttributeString("Name", themeInfo.Name);
-					
-				foreach (var propertyInfo in themeType.GetProperties())
-				{
-					if (!(propertyInfo.PropertyType == colorType))
-					{
-						continue;
-					}
-					var color = (Color)propertyInfo.GetValue(themeInfo, null);
-					xmlTextWriter.WriteStartElement("Color");
-					xmlTextWriter.WriteAttributeString("Name", propertyInfo.Name);
-					xmlTextWriter.WriteAttributeString("Value", EncodeColorName(color));
-					xmlTextWriter.WriteEndElement(); // Color
-				}
-					
-				xmlTextWriter.WriteEndElement(); // Theme
-			}
-				
-			xmlTextWriter.WriteEndElement(); // mRemoteNG
-				
-			xmlTextWriter.Close();
-				
-			File.Delete(filename);
-			File.Move(tempFileName, filename);
-		}
-			
-		public static List<ThemeInfo> LoadFromXmlFile(string filename)
+        /// <summary>
+        /// Load a theme form an xml file
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <param name="defaultTheme"></param>
+        /// <returns></returns>
+        public static ThemeInfo LoadFromXmlFile(string filename, ThemeInfo defaultTheme=null)
 		{
-			var xmlDocument = new XmlDocument();
-			xmlDocument.Load(filename);
-				
-			var fileInfoNode = xmlDocument.SelectSingleNode("/mRemoteNG/FileInfo");
-			var fileInfoVersion = new Version(fileInfoNode.Attributes["Version"].Value);
-			if (fileInfoVersion > new Version(1, 0))
-			{
-				throw (new FileFormatException($"Unsupported FileInfo version ({fileInfoVersion})."));
-			}
-				
-			var fileTypeNode = fileInfoNode.SelectSingleNode("./FileType");
-			var fileType = fileTypeNode.InnerText;
-			if (fileType != "Theme")
-			{
-				throw (new FileFormatException($"Incorrect FileType ({fileType}). Expected \"Theme\"."));
-			}
-				
-			var fileTypeVersion = new Version(fileInfoNode.SelectSingleNode("./FileTypeVersion").InnerText);
-			if (fileTypeVersion > new Version(1, 0))
-			{
-				throw (new FileFormatException($"Unsupported FileTypeVersion ({fileTypeVersion})."));
-			}
-				
-			var themeNodes = xmlDocument.SelectNodes("/mRemoteNG/Theme");
-			var themes = new List<ThemeInfo>();
-		    var themeType = (new ThemeInfo()).GetType();
-			var colorType = (new Color()).GetType();
-		    foreach (XmlNode themeNode in themeNodes)
-			{
-			    var themeInfo = new ThemeInfo {Name = themeNode.Attributes?["Name"].Value};
-			    foreach (XmlNode colorNode in themeNode.SelectNodes("./Color"))
-				{
-					var colorName = colorNode.Attributes?["Name"].Value;
-					var colorValue = colorNode.Attributes?["Value"].Value;
-					var propertyInfo = themeType.GetProperty(colorName);
-					if (propertyInfo == null || !(propertyInfo.PropertyType == colorType))
-					{
-						continue;
-					}
-					propertyInfo.SetValue(themeInfo, DecodeColorName(colorValue), null);
-				}
-				themes.Add(themeInfo);
-			}
-				
-			return themes;
+            var bytes = File.ReadAllBytes(filename);
+            //Load the dockpanel part
+            var themeBaseLoad= new MremoteNGThemeBase(bytes);
+            //Load the mremote part
+		    //Cause we cannot default the theme for the default theme
+            var extColorLoader = new MremoteNGPaletteManipulator(bytes, defaultTheme?.ExtendedPalette); 
+            var loadedTheme = new ThemeInfo(Path.GetFileNameWithoutExtension(filename), themeBaseLoad, filename, VisualStudioToolStripExtender.VsVersion.Vs2015, extColorLoader.getColors());
+            if(new[] { "darcula", "vs2015blue", "vs2015dark" , "vs2015light" }.Contains(Path.GetFileNameWithoutExtension(filename)))
+            {
+                loadedTheme.IsThemeBase = true;
+            }
+            loadedTheme.IsExtendable = true;
+            return loadedTheme;
 		}
-			
+
+        /*
 		private static string EncodeColorName(Color color)
 		{
             // best/simplest answer to converting to hex: http://stackoverflow.com/questions/12078942/how-to-convert-from-argb-to-hex-aarrggbb
@@ -126,5 +73,7 @@ namespace mRemoteNG.Themes
 	        var regex = new System.Text.RegularExpressions.Regex("^[0-9a-fA-F]{8}$");
 	        return regex.Match(name).Success ? Color.FromArgb(Convert.ToInt32(name, 16)) : Color.FromName(name);
 	    }
-	}
+        */
+
+    }
 }

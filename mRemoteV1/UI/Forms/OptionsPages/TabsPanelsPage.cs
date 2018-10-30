@@ -1,17 +1,16 @@
-using System;
-
 namespace mRemoteNG.UI.Forms.OptionsPages
 {
-    public partial class TabsPanelsPage
+    public sealed partial class TabsPanelsPage
     {
         public TabsPanelsPage()
         {
             InitializeComponent();
+            ApplyTheme();
         }
 
         public override string PageName
         {
-            get { return Language.strTabsAndPanels.Replace("&&", "&"); }
+            get => Language.strTabsAndPanels.Replace("&&", "&");
             set { }
         }
 
@@ -26,12 +25,8 @@ namespace mRemoteNG.UI.Forms.OptionsPages
             chkIdentifyQuickConnectTabs.Text = Language.strIdentifyQuickConnectTabs;
             chkDoubleClickClosesTab.Text = Language.strDoubleClickTabClosesIt;
             chkAlwaysShowPanelSelectionDlg.Text = Language.strAlwaysShowPanelSelection;
-
-            chkUseOnlyErrorsAndInfosPanel.Text = Language.strUseOnlyErrorsAndInfosPanel;
-            lblSwitchToErrorsAndInfos.Text = Language.strSwitchToErrorsAndInfos;
-            chkMCInformation.Text = Language.strInformations;
-            chkMCWarnings.Text = Language.strWarnings;
-            chkMCErrors.Text = Language.strErrors;
+            chkCreateEmptyPanelOnStart.Text = Language.strCreateEmptyPanelOnStartUp;
+            lblPanelName.Text = $@"{Language.strPanelName}:";
         }
 
         public override void LoadSettings()
@@ -45,11 +40,9 @@ namespace mRemoteNG.UI.Forms.OptionsPages
             chkIdentifyQuickConnectTabs.Checked = Settings.Default.IdentifyQuickConnectTabs;
             chkDoubleClickClosesTab.Checked = Settings.Default.DoubleClickOnTabClosesIt;
             chkAlwaysShowPanelSelectionDlg.Checked = Settings.Default.AlwaysShowPanelSelectionDlg;
-
-            chkUseOnlyErrorsAndInfosPanel.Checked = Settings.Default.ShowNoMessageBoxes;
-            chkMCInformation.Checked = Settings.Default.SwitchToMCOnInformation;
-            chkMCWarnings.Checked = Settings.Default.SwitchToMCOnWarning;
-            chkMCErrors.Checked = Settings.Default.SwitchToMCOnError;
+            chkCreateEmptyPanelOnStart.Checked = Settings.Default.CreateEmptyPanelOnStartUp;
+            txtBoxPanelName.Text = Settings.Default.StartUpPanelName;
+            UpdatePanelNameTextBox();
         }
 
         public override void SaveSettings()
@@ -57,7 +50,7 @@ namespace mRemoteNG.UI.Forms.OptionsPages
             base.SaveSettings();
 
             Settings.Default.AlwaysShowPanelTabs = chkAlwaysShowPanelTabs.Checked;
-            frmMain.Default.ShowHidePanelTabs();
+            FrmMain.Default.ShowHidePanelTabs();
 
             Settings.Default.OpenTabsRightOfSelected = chkOpenNewTabRightOfSelected.Checked;
             Settings.Default.ShowLogonInfoOnTabs = chkShowLogonInfoOnTabs.Checked;
@@ -65,20 +58,20 @@ namespace mRemoteNG.UI.Forms.OptionsPages
             Settings.Default.IdentifyQuickConnectTabs = chkIdentifyQuickConnectTabs.Checked;
             Settings.Default.DoubleClickOnTabClosesIt = chkDoubleClickClosesTab.Checked;
             Settings.Default.AlwaysShowPanelSelectionDlg = chkAlwaysShowPanelSelectionDlg.Checked;
-
-            Settings.Default.ShowNoMessageBoxes = chkUseOnlyErrorsAndInfosPanel.Checked;
-            Settings.Default.SwitchToMCOnInformation = chkMCInformation.Checked;
-            Settings.Default.SwitchToMCOnWarning = chkMCWarnings.Checked;
-            Settings.Default.SwitchToMCOnError = chkMCErrors.Checked;
+            Settings.Default.CreateEmptyPanelOnStartUp = chkCreateEmptyPanelOnStart.Checked;
+            Settings.Default.StartUpPanelName = txtBoxPanelName.Text;
 
             Settings.Default.Save();
         }
 
-        private void chkUseOnlyErrorsAndInfosPanel_CheckedChanged(object sender, EventArgs e)
+        private void UpdatePanelNameTextBox()
         {
-            chkMCInformation.Enabled = chkUseOnlyErrorsAndInfosPanel.Checked;
-            chkMCWarnings.Enabled = chkUseOnlyErrorsAndInfosPanel.Checked;
-            chkMCErrors.Enabled = chkUseOnlyErrorsAndInfosPanel.Checked;
+            txtBoxPanelName.Enabled = chkCreateEmptyPanelOnStart.Checked;
+        }
+
+        private void chkCreateEmptyPanelOnStart_CheckedChanged(object sender, System.EventArgs e)
+        {
+            UpdatePanelNameTextBox();
         }
     }
 }
