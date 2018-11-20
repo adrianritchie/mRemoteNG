@@ -1,21 +1,21 @@
-using System;
-using System.Collections;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Drawing;
-using System.Threading;
-using System.Windows.Forms;
 using AxMSTSCLib;
 using mRemoteNG.App;
 using mRemoteNG.Messages;
 using mRemoteNG.Security.SymmetricEncryption;
 using mRemoteNG.Tools;
+using mRemoteNG.UI;
 using mRemoteNG.UI.Forms;
 using MSTSCLib;
+using System;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Drawing;
+using System.Threading;
+using System.Windows.Forms;
 
 namespace mRemoteNG.Connection.Protocol.RDP
 {
-	public class RdpProtocol : ProtocolBase
+    public class RdpProtocol : ProtocolBase
 	{
         /* RDP v8 requires Windows 7 with:
          * https://support.microsoft.com/en-us/kb/2592687 
@@ -30,6 +30,7 @@ namespace mRemoteNG.Connection.Protocol.RDP
         private bool _loginComplete;
         private bool _redirectKeys;
         private bool _alertOnIdleDisconnect;
+	    private readonly DisplayProperties _displayProperties;
         private readonly FrmMain _frmMain = FrmMain.Default;
 
         #region Properties
@@ -95,6 +96,7 @@ namespace mRemoteNG.Connection.Protocol.RDP
         public RdpProtocol()
         {
             Control = new AxMsRdpClient8NotSafeForScripting();
+            _displayProperties = new DisplayProperties();
         }
         #endregion
 
@@ -159,8 +161,8 @@ namespace mRemoteNG.Connection.Protocol.RDP
                 SetAuthenticationLevel();
 				SetLoadBalanceInfo();
                 SetRdGateway();
-						
-				_rdpClient.ColorDepth = (int)_connectionInfo.Colors;
+
+                _rdpClient.ColorDepth = (int)_connectionInfo.Colors;
 
                 SetPerformanceFlags();
 						
@@ -176,7 +178,7 @@ namespace mRemoteNG.Connection.Protocol.RDP
 				return false;
 			}
 		}
-				
+
 		public override bool Connect()
 		{
 			_loginComplete = false;
@@ -351,7 +353,7 @@ namespace mRemoteNG.Connection.Protocol.RDP
 					{
 						_rdpClient.TransportSettings.GatewayCredsSource = 1; // TSC_PROXY_CREDS_MODE_SMARTCARD
 					}
-					if (_rdpVersion >= Versions.RDC61 && (Force & ConnectionInfo.Force.NoCredentials) != ConnectionInfo.Force.NoCredentials)
+					if (_rdpVersion >= Versions.RDC61 && !Force.HasFlag(ConnectionInfo.Force.NoCredentials))
 					{
 						if (_connectionInfo.RDGatewayUseConnectionCredentials == RDGatewayUseConnectionCredentials.Yes)
 						{
@@ -385,11 +387,11 @@ namespace mRemoteNG.Connection.Protocol.RDP
 			{
 				bool value;
 						
-				if ((Force & ConnectionInfo.Force.UseConsoleSession) == ConnectionInfo.Force.UseConsoleSession)
+				if (Force.HasFlag(ConnectionInfo.Force.UseConsoleSession))
 				{
 					value = true;
 				}
-				else if ((Force & ConnectionInfo.Force.DontUseConsoleSession) == ConnectionInfo.Force.DontUseConsoleSession)
+				else if (Force.HasFlag(ConnectionInfo.Force.DontUseConsoleSession))
 				{
 					value = false;
 				}
@@ -416,12 +418,41 @@ namespace mRemoteNG.Connection.Protocol.RDP
 				Runtime.MessageCollector.AddExceptionStackTrace(Language.strRdpSetConsoleSessionFailed, ex);
 			}
 		}
-				
+
+	    private object GetExtendedProperty(string property)
+	    {
+	        try
+	        {
+	            // ReSharper disable once UseIndexedProperty
+	            return ((IMsRdpExtendedSettings)_rdpClient).get_Property(property);
+	        }
+	        catch (Exception e)
+	        {
+	            Runtime.MessageCollector.AddExceptionMessage($"Error getting extended RDP property '{property}'",
+	                e, MessageClass.WarningMsg, false);
+	            return null;
+	        }
+	    }
+
+        private void SetExtendedProperty(string property, object value)
+	    {
+	        try
+	        {
+	            // ReSharper disable once UseIndexedProperty
+	            ((IMsRdpExtendedSettings)_rdpClient).set_Property(property, ref value);
+	        }
+	        catch (Exception e)
+	        {
+	            Runtime.MessageCollector.AddExceptionMessage($"Error setting extended RDP property '{property}'",
+	                e, MessageClass.WarningMsg, false);
+	        }
+	    }
+
 		private void SetCredentials()
 		{
 			try
 			{
-				if ((Force & ConnectionInfo.Force.NoCredentials) == ConnectionInfo.Force.NoCredentials)
+				if (Force.HasFlag(ConnectionInfo.Force.NoCredentials))
 				{
 					return;
 				}
@@ -488,7 +519,11 @@ namespace mRemoteNG.Connection.Protocol.RDP
 		{
 			try
 			{
-				if ((Force & ConnectionInfo.Force.Fullscreen) == ConnectionInfo.Force.Fullscreen)
+			    var scaleFactor = (uint)_displayProperties.ResolutionScalingFactor.Width * 100;
+			    SetExtendedProperty("DesktopScaleFactor", scaleFactor);
+			    SetExtendedProperty("DeviceScaleFactor", (uint)100);
+
+                if (Force.HasFlag(ConnectionInfo.Force.Fullscreen))
 				{
 					_rdpClient.FullScreen = true;
                     _rdpClient.DesktopWidth = Screen.FromControl(_frmMain).Bounds.Width;
@@ -506,8 +541,6 @@ namespace mRemoteNG.Connection.Protocol.RDP
 				    {
                         _rdpClient.AdvancedSettings2.SmartSizing = true;
                     }
-
-                    
 				}
 				else if (InterfaceControl.Info.Resolution == RDPResolutions.Fullscreen)
 				{
@@ -883,45 +916,6 @@ namespace mRemoteNG.Connection.Protocol.RDP
 			public static readonly Version RDC80 = new Version(6, 2, 9200);
             public static readonly Version RDC81 = new Version(6, 3, 9600);
 		}
-		
-        #region Fatal Errors
-		public static class FatalErrors
-		{
-		    private static Hashtable _description;
-
-		    private static void InitDescription()
-            {
-                _description = new Hashtable
-                {
-                    {"0", "Language.strRdpErrorUnknown"},
-                    {"1", "Language.strRdpErrorCode1"},
-                    {"2", "Language.strRdpErrorOutOfMemory"},
-                    {"3", "Language.strRdpErrorWindowCreation"},
-                    {"4", "Language.strRdpErrorCode2"},
-                    {"5", "Language.strRdpErrorCode3"},
-                    {"6", "Language.strRdpErrorCode4"},
-                    {"7", "Language.strRdpErrorConnection"},
-                    {"100", "Language.strRdpErrorWinsock"}
-                };
-            }
-					
-			public static string GetError(string id)
-			{
-				try
-				{
-				    if (_description == null)
-                        InitDescription();
-
-				    return (string)_description?[id];
-				}
-				catch (Exception ex)
-				{
-					Runtime.MessageCollector.AddExceptionStackTrace(Language.strRdpErrorGetFailure, ex);
-					return string.Format(Language.strRdpErrorUnknown, id);
-				}
-			}
-		}
-        #endregion
 		
         #region Reconnect Stuff
 		public void tmrReconnect_Elapsed(object sender, System.Timers.ElapsedEventArgs e)

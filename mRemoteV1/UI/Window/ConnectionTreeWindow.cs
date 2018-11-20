@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Linq;
-using System.Windows.Forms;
 using mRemoteNG.App;
 using mRemoteNG.Config.Connections;
 using mRemoteNG.Connection;
@@ -11,6 +5,13 @@ using mRemoteNG.Themes;
 using mRemoteNG.Tree;
 using mRemoteNG.Tree.Root;
 using mRemoteNG.UI.Controls;
+using mRemoteNG.UI.TaskDialog;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Linq;
+using System.Windows.Forms;
 using WeifenLuo.WinFormsUI.Docking;
 // ReSharper disable ArrangeAccessorOwnerBody
 
@@ -50,8 +51,6 @@ namespace mRemoteNG.UI.Window
 	            ConnectionTree.UseFiltering = Settings.Default.UseFilterSearch;
 	            ApplyFiltering();
             }
-
-	        SetConnectionTreeEventHandlers();
 	    }
 
 
@@ -106,7 +105,8 @@ namespace mRemoteNG.UI.Window
         #region ConnectionTree
 	    private void SetConnectionTreeEventHandlers()
 	    {
-	        olvConnections.NodeDeletionConfirmer = new SelectedConnectionDeletionConfirmer(MessageBox.Show);
+	        olvConnections.NodeDeletionConfirmer = new SelectedConnectionDeletionConfirmer(prompt => 
+	            CTaskDialog.MessageBox(Application.ProductName, prompt, "", ETaskDialogButtons.YesNo, ESysIcons.Question));
             olvConnections.KeyDown += tvConnections_KeyDown;
             olvConnections.KeyPress += tvConnections_KeyPress;
             SetTreePostSetupActions();

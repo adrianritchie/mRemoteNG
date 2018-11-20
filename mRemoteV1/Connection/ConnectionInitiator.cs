@@ -1,6 +1,4 @@
-﻿using System;
-using System.Windows.Forms;
-using mRemoteNG.App;
+﻿using mRemoteNG.App;
 using mRemoteNG.Connection.Protocol;
 using mRemoteNG.Connection.Protocol.RDP;
 using mRemoteNG.Container;
@@ -8,43 +6,23 @@ using mRemoteNG.Messages;
 using mRemoteNG.UI.Forms;
 using mRemoteNG.UI.Panels;
 using mRemoteNG.UI.Window;
+using System;
+using System.Collections.Generic;
+using System.Windows.Forms;
 using TabPage = Crownwood.Magic.Controls.TabPage;
 
 
 namespace mRemoteNG.Connection
 {
-	public class ConnectionInitiator : IConnectionInitiator
+    public class ConnectionInitiator : IConnectionInitiator
     {
         private readonly PanelAdder _panelAdder = new PanelAdder();
+        private readonly List<string> _activeConnections = new List<string>();
 
-        public void OpenConnection(ContainerInfo containerInfo, ConnectionInfo.Force force = ConnectionInfo.Force.None)
-        {
-            OpenConnection(containerInfo, force, null);
-        }
-
-        public void OpenConnection(ConnectionInfo connectionInfo)
-        {
-            try
-            {
-                OpenConnection(connectionInfo, ConnectionInfo.Force.None);
-            }
-            catch (Exception ex)
-            {
-                Runtime.MessageCollector.AddExceptionStackTrace(Language.strConnectionOpenFailed, ex);
-            }
-        }
-
-        public void OpenConnection(ConnectionInfo connectionInfo, ConnectionInfo.Force force)
-        {
-            try
-            {
-                OpenConnection(connectionInfo, force, null);
-            }
-            catch (Exception ex)
-            {
-                Runtime.MessageCollector.AddExceptionStackTrace(Language.strConnectionOpenFailed, ex);
-            }
-        }
+        /// <summary>
+        /// List of unique IDs of the currently active connections
+        /// </summary>
+        public IEnumerable<string> ActiveConnections => _activeConnections;
 
         public bool SwitchToOpenConnection(ConnectionInfo connectionInfo)
         {
@@ -59,8 +37,7 @@ namespace mRemoteNG.Connection
             return true;
         }
 
-        #region Private
-        private void OpenConnection(ContainerInfo containerInfo, ConnectionInfo.Force force, Form conForm)
+        public void OpenConnection(ContainerInfo containerInfo, ConnectionInfo.Force force)
         {
             var children = containerInfo.Children;
             if (children.Count == 0) return;
@@ -68,13 +45,13 @@ namespace mRemoteNG.Connection
             {
                 var childAsContainer = child as ContainerInfo;
                 if (childAsContainer != null)
-                    OpenConnection(childAsContainer, force, conForm);
+                    OpenConnection(childAsContainer, force);
                 else
-                    OpenConnection(child, force, conForm);
+                    OpenConnection(child, force);
             }
         }
 
-        private void OpenConnection(ConnectionInfo connectionInfo, ConnectionInfo.Force force, Form conForm)
+        public void OpenConnection(ConnectionInfo connectionInfo, ConnectionInfo.Force force = ConnectionInfo.Force.None)
         {
             try
             {
@@ -86,7 +63,7 @@ namespace mRemoteNG.Connection
 
                 StartPreConnectionExternalApp(connectionInfo);
 
-                if ((force & ConnectionInfo.Force.DoNotJump) != ConnectionInfo.Force.DoNotJump)
+                if (!force.HasFlag(ConnectionInfo.Force.DoNotJump))
                 {
                     if (SwitchToOpenConnection(connectionInfo))
                         return;
@@ -97,7 +74,7 @@ namespace mRemoteNG.Connection
 
                 var connectionPanel = SetConnectionPanel(connectionInfo, force);
                 if (string.IsNullOrEmpty(connectionPanel)) return;
-                var connectionForm = SetConnectionForm(conForm, connectionPanel);
+                var connectionForm = SetConnectionForm(connectionPanel);
                 var connectionContainer = SetConnectionContainer(connectionInfo, connectionForm);
                 SetConnectionFormEventHandlers(newProtocol, connectionForm);
                 SetConnectionEventHandlers(newProtocol);
@@ -118,6 +95,7 @@ namespace mRemoteNG.Connection
                 }
 
                 connectionInfo.OpenConnections.Add(newProtocol);
+                _activeConnections.Add(connectionInfo.ConstantID);
                 FrmMain.Default.SelectedConnection = connectionInfo;
             }
             catch (Exception ex)
@@ -126,6 +104,7 @@ namespace mRemoteNG.Connection
             }
         }
 
+        #region Private
         private static void StartPreConnectionExternalApp(ConnectionInfo connectionInfo)
         {
             if (connectionInfo.PreExtApp == "") return;
@@ -157,7 +136,7 @@ namespace mRemoteNG.Connection
         private static string SetConnectionPanel(ConnectionInfo connectionInfo, ConnectionInfo.Force force)
         {
             var connectionPanel = "";
-            if (connectionInfo.Panel == "" || (force & ConnectionInfo.Force.OverridePanel) == ConnectionInfo.Force.OverridePanel | Settings.Default.AlwaysShowPanelSelectionDlg)
+            if (connectionInfo.Panel == "" || force.HasFlag(ConnectionInfo.Force.OverridePanel) || Settings.Default.AlwaysShowPanelSelectionDlg)
             {
                 var frmPnl = new frmChoosePanel();
                 if (frmPnl.ShowDialog() == DialogResult.OK)
@@ -176,22 +155,22 @@ namespace mRemoteNG.Connection
             return connectionPanel;
         }
 
-        private Form SetConnectionForm(Form conForm, string connectionPanel)
+        private ConnectionWindow SetConnectionForm(string connectionPanelName)
         {
-            var connectionForm = conForm ?? Runtime.WindowList.FromString(connectionPanel);
+            var connectionForm = Runtime.WindowList.FromString(connectionPanelName) as ConnectionWindow;
 
             if (connectionForm == null)
-                connectionForm = _panelAdder.AddPanel(connectionPanel);
+                connectionForm = _panelAdder.AddPanel(connectionPanelName);
             else
-                ((ConnectionWindow)connectionForm).Show(FrmMain.Default.pnlDock);
+                connectionForm.Show(FrmMain.Default.pnlDock);
 
             connectionForm.Focus();
             return connectionForm;
         }
 
-        private static Control SetConnectionContainer(ConnectionInfo connectionInfo, Form connectionForm)
+        private static Control SetConnectionContainer(ConnectionInfo connectionInfo, ConnectionWindow connectionForm)
         {
-            Control connectionContainer = ((ConnectionWindow)connectionForm).AddConnectionTab(connectionInfo);
+            Control connectionContainer = connectionForm.AddConnectionTab(connectionInfo);
 
             if (connectionInfo.Protocol != ProtocolType.IntApp) return connectionContainer;
 
@@ -205,12 +184,12 @@ namespace mRemoteNG.Connection
             return connectionContainer;
         }
 
-        private static void SetConnectionFormEventHandlers(ProtocolBase newProtocol, Form connectionForm)
+        private static void SetConnectionFormEventHandlers(ProtocolBase newProtocol, ConnectionWindow connectionForm)
         {
-            newProtocol.Closed += ((ConnectionWindow)connectionForm).Prot_Event_Closed;
+            newProtocol.Closed += connectionForm.Prot_Event_Closed;
         }
 
-        private static void SetConnectionEventHandlers(ProtocolBase newProtocol)
+        private void SetConnectionEventHandlers(ProtocolBase newProtocol)
         {
             newProtocol.Disconnected += Prot_Event_Disconnected;
             newProtocol.Connected += Prot_Event_Connected;
@@ -251,7 +230,7 @@ namespace mRemoteNG.Connection
             }
         }
 
-        private static void Prot_Event_Closed(object sender)
+        private void Prot_Event_Closed(object sender)
         {
             try
             {
@@ -267,6 +246,8 @@ namespace mRemoteNG.Connection
 
                 Runtime.MessageCollector.AddMessage(MessageClass.InformationMsg, string.Format(Language.strConnenctionClosedByUser, connDetail, prot.InterfaceControl.Info.Protocol, Environment.UserName));
                 prot.InterfaceControl.Info.OpenConnections.Remove(prot);
+                if (_activeConnections.Contains(prot.InterfaceControl.Info.ConstantID))
+                    _activeConnections.Remove(prot.InterfaceControl.Info.ConstantID);
 
                 if (prot.InterfaceControl.Info.PostExtApp == "") return;
                 var extA = Runtime.ExternalToolsService.GetExtAppByName(prot.InterfaceControl.Info.PostExtApp);
@@ -294,7 +275,7 @@ namespace mRemoteNG.Connection
 
                 if (prot.InterfaceControl.Info.Protocol != ProtocolType.RDP) return;
                 if (Convert.ToInt32(errorMessage) > -1)
-                    Runtime.MessageCollector.AddMessage(MessageClass.WarningMsg, string.Format(Language.strConnectionRdpErrorDetail, errorMessage, RdpProtocol.FatalErrors.GetError(errorMessage)));
+                    Runtime.MessageCollector.AddMessage(MessageClass.WarningMsg, string.Format(Language.strConnectionRdpErrorDetail, errorMessage, RdpErrorCodes.GetError(errorMessage)));
             }
             catch (Exception ex)
             {

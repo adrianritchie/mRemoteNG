@@ -16,6 +16,7 @@ namespace mRemoteNG.UI.Window
 	{
         private ControlLayout _layout = ControlLayout.Vertical;
         private readonly ThemeManager _themeManager;
+	    private readonly DisplayProperties _display;
 
         public DockContent PreviousActiveForm { get; set; }
 
@@ -27,7 +28,9 @@ namespace mRemoteNG.UI.Window
         {
             WindowType = WindowType.ErrorsAndInfos;
             DockPnl = panel;
+            _display = new DisplayProperties();
             InitializeComponent();
+            lblMsgDate.Width = _display.ScaleWidth(lblMsgDate.Width);
             _themeManager = ThemeManager.getInstance();
             ApplyTheme();
             _themeManager.ThemeChanged += ApplyTheme;
@@ -59,25 +62,27 @@ namespace mRemoteNG.UI.Window
             lvErrorCollector.ForeColor = _themeManager.ActiveTheme.ExtendedPalette.getColor("TextBox_Foreground");
         }
 
-
         private void FillImageList()
-		{
-		    imgListMC.Images.Add(Resources.brick);
-			imgListMC.Images.Add(Resources.InformationSmall);
-			imgListMC.Images.Add(Resources.WarningSmall);
-			imgListMC.Images.Add(Resources.ErrorSmall);
+        {
+            imgListMC.ImageSize = _display.ScaleSize(imgListMC.ImageSize);
+            imgListMC.Images.Add(_display.ScaleImage(Resources.brick));
+			imgListMC.Images.Add(_display.ScaleImage(Resources.InformationSmall));
+			imgListMC.Images.Add(_display.ScaleImage(Resources.WarningSmall));
+			imgListMC.Images.Add(_display.ScaleImage(Resources.ErrorSmall));
 		}
 				
 		private void LayoutVertical()
 		{
 			try
 			{
-				pnlErrorMsg.Location = new Point(0, Height - 200);
+				pnlErrorMsg.Location = new Point(0, Height - _display.ScaleHeight(200));
 				pnlErrorMsg.Size = new Size(Width, Height - pnlErrorMsg.Top);
 				pnlErrorMsg.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-				txtMsgText.Size = new Size(pnlErrorMsg.Width - pbError.Width - 8, pnlErrorMsg.Height - 20);
+				txtMsgText.Size = new Size(
+				    pnlErrorMsg.Width - pbError.Width - _display.ScaleWidth(8), 
+				    pnlErrorMsg.Height - _display.ScaleHeight(20));
 				lvErrorCollector.Location = new Point(0, 0);
-				lvErrorCollector.Size = new Size(Width, Height - pnlErrorMsg.Height - 5);
+				lvErrorCollector.Size = new Size(Width, Height - pnlErrorMsg.Height - _display.ScaleHeight(5));
 				lvErrorCollector.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
 						
 				_layout = ControlLayout.Vertical;
@@ -93,11 +98,14 @@ namespace mRemoteNG.UI.Window
 			try
 			{
 				pnlErrorMsg.Location = new Point(0, 0);
-				pnlErrorMsg.Size = new Size(200, Height);
+				pnlErrorMsg.Size = new Size(_display.ScaleWidth(200), Height);
 				pnlErrorMsg.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Top;
-				txtMsgText.Size = new Size(pnlErrorMsg.Width - pbError.Width - 8, pnlErrorMsg.Height - 20);
-				lvErrorCollector.Location = new Point(pnlErrorMsg.Width + 5, 0);
-				lvErrorCollector.Size = new Size(Width - pnlErrorMsg.Width - 5, Height);
+
+                txtMsgText.Size = new Size(
+				    pnlErrorMsg.Width - pbError.Width - _display.ScaleWidth(8), 
+				    pnlErrorMsg.Height - _display.ScaleHeight(20));
+				lvErrorCollector.Location = new Point(pnlErrorMsg.Width + _display.ScaleWidth(5), 0);
+				lvErrorCollector.Size = new Size(Width - pnlErrorMsg.Width - _display.ScaleWidth(5), Height);
 				lvErrorCollector.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
 						
 				_layout = ControlLayout.Horizontal;
@@ -131,15 +139,16 @@ namespace mRemoteNG.UI.Window
 			}
 		}
 				
-		private void pnlErrorMsg_ResetDefaultStyle()
+		private void SetStyleWhenNoMessageSelected()
 		{
 			try
 			{
 				pnlErrorMsg.BackColor = Color.FromKnownColor(KnownColor.Control);
 				pbError.Image = null;
-				txtMsgText.Text = "";
 				txtMsgText.BackColor = Color.FromKnownColor(KnownColor.Control);
-				lblMsgDate.Text = "";
+				txtMsgText.Text = "";
+                lblMsgDate.BackColor = Color.FromKnownColor(KnownColor.Control);
+                lblMsgDate.Text = "";
 			}
 			catch (Exception ex)
 			{
@@ -176,7 +185,7 @@ namespace mRemoteNG.UI.Window
 			{
 				if (lvErrorCollector.SelectedItems.Count == 0 | lvErrorCollector.SelectedItems.Count > 1)
 				{
-					pnlErrorMsg_ResetDefaultStyle();
+					SetStyleWhenNoMessageSelected();
 					return;
 				}
 						
@@ -185,23 +194,25 @@ namespace mRemoteNG.UI.Window
 				switch (eMsg.Class)
 				{
                     case MessageClass.DebugMsg:
-				        pbError.Image = Resources.brick;
+				        pbError.Image = _display.ScaleImage(Resources.brick);
                         if(_themeManager.ThemingActive)
                         {
                             pnlErrorMsg.BackColor = Color.LightSteelBlue;
                             txtMsgText.BackColor = Color.LightSteelBlue;
+                            lblMsgDate.BackColor = Color.LightSteelBlue;
                         }
                         break;
 					case MessageClass.InformationMsg:
-						pbError.Image = Resources.Information;
+						pbError.Image = _display.ScaleImage(Resources.Information);
                         if (_themeManager.ThemingActive)
                         {
                             pnlErrorMsg.BackColor = Color.LightSteelBlue;
 						    txtMsgText.BackColor = Color.LightSteelBlue;
+                            lblMsgDate.BackColor = Color.LightSteelBlue;
                         }
                         break;
 					case MessageClass.WarningMsg:
-						pbError.Image = Resources.Warning;
+						pbError.Image = _display.ScaleImage(Resources.Warning);
                         if (_themeManager.ThemingActive)
                         {
                             //Inverse colors for dramatic effect
@@ -209,20 +220,24 @@ namespace mRemoteNG.UI.Window
                             pnlErrorMsg.ForeColor = _themeManager.ActiveTheme.ExtendedPalette.getColor ("WarningText_Background");
                             txtMsgText.BackColor = _themeManager.ActiveTheme.ExtendedPalette.getColor("WarningText_Foreground");
                             txtMsgText.ForeColor = _themeManager.ActiveTheme.ExtendedPalette.getColor("WarningText_Background");
+                            lblMsgDate.BackColor = _themeManager.ActiveTheme.ExtendedPalette.getColor("WarningText_Foreground");
+                            lblMsgDate.ForeColor = _themeManager.ActiveTheme.ExtendedPalette.getColor("WarningText_Background");
                         }
                         break;
 					case MessageClass.ErrorMsg:
-						pbError.Image = Resources._Error;
+						pbError.Image = _display.ScaleImage(Resources._Error);
                         if (_themeManager.ThemingActive)
                         {
                             pnlErrorMsg.BackColor = _themeManager.ActiveTheme.ExtendedPalette.getColor("ErrorText_Foreground");
                             pnlErrorMsg.ForeColor = _themeManager.ActiveTheme.ExtendedPalette.getColor("ErrorText_Background");
                             txtMsgText.BackColor = _themeManager.ActiveTheme.ExtendedPalette.getColor("ErrorText_Foreground");
                             txtMsgText.ForeColor = _themeManager.ActiveTheme.ExtendedPalette.getColor("ErrorText_Background");
+                            lblMsgDate.BackColor = _themeManager.ActiveTheme.ExtendedPalette.getColor("ErrorText_Foreground");
+                            lblMsgDate.ForeColor = _themeManager.ActiveTheme.ExtendedPalette.getColor("ErrorText_Background");
                         }
                         break;
 				}
-						
+				
 				lblMsgDate.Text = eMsg.Date.ToString(CultureInfo.InvariantCulture);
 				txtMsgText.Text = eMsg.Text;
 			}
