@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Xml.Linq;
-using mRemoteNG.Config.Serializers;
 using mRemoteNG.Config.Serializers.Xml;
 using mRemoteNG.Security;
 using mRemoteNG.Security.Factories;
@@ -11,11 +10,12 @@ using NUnit.Framework;
 
 namespace mRemoteNGTests.Config.Serializers.ConnectionSerializers.Xml
 {
-    public class XmlRootNodeSerializerTests
+	public class XmlRootNodeSerializerTests
     {
         private XmlRootNodeSerializer _rootNodeSerializer;
         private ICryptographyProvider _cryptographyProvider;
         private RootNodeInfo _rootNodeInfo;
+        private Version _version;
 
         [SetUp]
         public void Setup()
@@ -23,19 +23,21 @@ namespace mRemoteNGTests.Config.Serializers.ConnectionSerializers.Xml
             _rootNodeSerializer = new XmlRootNodeSerializer();
             _cryptographyProvider = new AeadCryptographyProvider();
             _rootNodeInfo = new RootNodeInfo(RootNodeType.Connection);
+            _version = new Version(99, 1);
         }
 
         [Test]
         public void RootElementNamedConnections()
         {
-            var element = _rootNodeSerializer.SerializeRootNodeInfo(_rootNodeInfo, _cryptographyProvider);
+            var element = _rootNodeSerializer.SerializeRootNodeInfo(_rootNodeInfo, _cryptographyProvider, _version);
             Assert.That(element.Name.LocalName, Is.EqualTo("Connections"));
         }
 
         [Test]
+		[SetUICulture("en-US")]
         public void RootNodeInfoNameSerialized()
         {
-            var element = _rootNodeSerializer.SerializeRootNodeInfo(_rootNodeInfo, _cryptographyProvider);
+            var element = _rootNodeSerializer.SerializeRootNodeInfo(_rootNodeInfo, _cryptographyProvider, _version);
             var attributeValue = element.Attribute(XName.Get("Name"))?.Value;
             Assert.That(attributeValue, Is.EqualTo("Connections"));
         }
@@ -44,7 +46,7 @@ namespace mRemoteNGTests.Config.Serializers.ConnectionSerializers.Xml
         public void EncryptionEngineSerialized(BlockCipherEngines engine, BlockCipherModes mode)
         {
             var cryptoProvider = new CryptoProviderFactory(engine, mode).Build();
-            var element = _rootNodeSerializer.SerializeRootNodeInfo(_rootNodeInfo, cryptoProvider);
+            var element = _rootNodeSerializer.SerializeRootNodeInfo(_rootNodeInfo, cryptoProvider, _version);
             var attributeValue = element.Attribute(XName.Get("EncryptionEngine"))?.Value;
             Assert.That(attributeValue, Is.EqualTo(engine.ToString()));
         }
@@ -53,7 +55,7 @@ namespace mRemoteNGTests.Config.Serializers.ConnectionSerializers.Xml
         public void EncryptionModeSerialized(BlockCipherEngines engine, BlockCipherModes mode)
         {
             var cryptoProvider = new CryptoProviderFactory(engine, mode).Build();
-            var element = _rootNodeSerializer.SerializeRootNodeInfo(_rootNodeInfo, cryptoProvider);
+            var element = _rootNodeSerializer.SerializeRootNodeInfo(_rootNodeInfo, cryptoProvider, _version);
             var attributeValue = element.Attribute(XName.Get("BlockCipherMode"))?.Value;
             Assert.That(attributeValue, Is.EqualTo(mode.ToString()));
         }
@@ -65,7 +67,7 @@ namespace mRemoteNGTests.Config.Serializers.ConnectionSerializers.Xml
         public void KdfIterationsSerialized(int iterations)
         {
             _cryptographyProvider.KeyDerivationIterations = iterations;
-            var element = _rootNodeSerializer.SerializeRootNodeInfo(_rootNodeInfo, _cryptographyProvider);
+            var element = _rootNodeSerializer.SerializeRootNodeInfo(_rootNodeInfo, _cryptographyProvider, _version);
             var attributeValue = element.Attribute(XName.Get("KdfIterations"))?.Value;
             Assert.That(attributeValue, Is.EqualTo(iterations.ToString()));
         }
@@ -74,7 +76,7 @@ namespace mRemoteNGTests.Config.Serializers.ConnectionSerializers.Xml
         [TestCase(false)]
         public void FullFileEncryptionFlagSerialized(bool fullFileEncryption)
         {
-            var element = _rootNodeSerializer.SerializeRootNodeInfo(_rootNodeInfo, _cryptographyProvider, fullFileEncryption);
+            var element = _rootNodeSerializer.SerializeRootNodeInfo(_rootNodeInfo, _cryptographyProvider, _version, fullFileEncryption);
             var attributeValue = element.Attribute(XName.Get("FullFileEncryption"))?.Value;
             Assert.That(bool.Parse(attributeValue), Is.EqualTo(fullFileEncryption));
         }
@@ -86,7 +88,7 @@ namespace mRemoteNGTests.Config.Serializers.ConnectionSerializers.Xml
         public void ProtectedStringSerialized(string customPassword, string expectedPlainText)
         {
             _rootNodeInfo.PasswordString = customPassword;
-            var element = _rootNodeSerializer.SerializeRootNodeInfo(_rootNodeInfo, _cryptographyProvider);
+            var element = _rootNodeSerializer.SerializeRootNodeInfo(_rootNodeInfo, _cryptographyProvider, _version);
             var attributeValue = element.Attribute(XName.Get("Protected"))?.Value;
             var attributeValuePlainText = _cryptographyProvider.Decrypt(attributeValue, _rootNodeInfo.PasswordString.ConvertToSecureString());
             Assert.That(attributeValuePlainText, Is.EqualTo(expectedPlainText));
@@ -95,10 +97,10 @@ namespace mRemoteNGTests.Config.Serializers.ConnectionSerializers.Xml
         [Test]
         public void ConfVersionSerialized()
         {
-            var element = _rootNodeSerializer.SerializeRootNodeInfo(_rootNodeInfo, _cryptographyProvider);
+            var element = _rootNodeSerializer.SerializeRootNodeInfo(_rootNodeInfo, _cryptographyProvider, _version);
             var attributeValue = element.Attribute(XName.Get("ConfVersion"))?.Value ?? "";
-            var versionAsNumber = double.Parse(attributeValue);
-            Assert.That(versionAsNumber, Is.GreaterThan(0));
+            var confVersion = Version.Parse(attributeValue);
+            Assert.That(confVersion, Is.EqualTo(_version));
         }
 
         private class TestCaseSources

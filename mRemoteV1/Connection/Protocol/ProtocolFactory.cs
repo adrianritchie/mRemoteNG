@@ -15,12 +15,12 @@ namespace mRemoteNG.Connection.Protocol
         {
             var newProtocol = default(ProtocolBase);
             // ReSharper disable once SwitchStatementMissingSomeCases
-			switch (connectionInfo.Protocol)
-			{
-				case ProtocolType.RDP:
-					newProtocol = new RdpProtocol
-					{
-					    LoadBalanceInfoUseUtf8 = Settings.Default.RdpLoadBalanceInfoUseUtf8
+            switch (connectionInfo.Protocol)
+            {
+                case ProtocolType.RDP:
+                    newProtocol = new RdpProtocol
+                    {
+                        LoadBalanceInfoUseUtf8 = Settings.Default.RdpLoadBalanceInfoUseUtf8
                     };
 					((RdpProtocol) newProtocol).tmrReconnect.Elapsed += ((RdpProtocol) newProtocol).tmrReconnect_Elapsed;
 					break;
@@ -60,6 +60,7 @@ namespace mRemoteNG.Connection.Protocol
 					}
 					break;
 			}
+
             return newProtocol;
         }
     }
