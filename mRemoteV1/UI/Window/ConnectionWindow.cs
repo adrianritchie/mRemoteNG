@@ -234,37 +234,42 @@ namespace mRemoteNG.UI.Window
             switch (DockState)
             {
                 case DockState.Float:
-                {
-                    if (_documentHandlersAdded)
                     {
-                        FrmMain.Default.ResizeBegin -= Connection_ResizeBegin;
-                        FrmMain.Default.ResizeEnd -= Connection_ResizeEnd;
-                        _documentHandlersAdded = false;
-                    }
+                        if (_documentHandlersAdded)
+                        {
+                            FrmMain.Default.ResizeBegin -= Connection_ResizeBegin;
+                            FrmMain.Default.ResizeEnd -= Connection_ResizeEnd;
+                            _documentHandlersAdded = false;
+                        }
+                        
+                        DockHandler.FloatPane.FloatWindow.ResizeBegin += Connection_ResizeBegin;
+                        DockHandler.FloatPane.FloatWindow.ResizeEnd += Connection_ResizeEnd;
+                        DockHandler.FloatPane.FloatWindow.MaximizeBox = this.MaximizeBox;
+                        DockHandler.FloatPane.FloatWindow.FormBorderStyle = FormBorderStyle.Sizable;
+                        DockHandler.FloatPane.FloatWindow.ShowInTaskbar = true;
+                        DockHandler.FloatPane.FloatWindow.Owner = null;
 
-                    DockHandler.FloatPane.FloatWindow.ResizeBegin += Connection_ResizeBegin;
-                    DockHandler.FloatPane.FloatWindow.ResizeEnd += Connection_ResizeEnd;
-                    _floatHandlersAdded = true;
-                    break;
-                }
-                DockHandler.FloatPane.FloatWindow.ResizeBegin += Connection_ResizeBegin;
-                DockHandler.FloatPane.FloatWindow.ResizeEnd += Connection_ResizeEnd;
-                DockHandler.FloatPane.FloatWindow.MaximizeBox = this.MaximizeBox;
-                DockHandler.FloatPane.FloatWindow.FormBorderStyle = FormBorderStyle.Sizable;
-                DockHandler.FloatPane.FloatWindow.ShowInTaskbar = true;
-                DockHandler.FloatPane.FloatWindow.Owner = null;
-                
-                _floatHandlersAdded = true;
-            }
-            else if (DockState == DockState.Document)
-            {
-                if (_floatHandlersAdded)
-                {
-                    DockHandler.FloatPane.FloatWindow.ResizeBegin -= Connection_ResizeBegin;
-                    DockHandler.FloatPane.FloatWindow.ResizeEnd -= Connection_ResizeEnd;
-                    DockHandler.FloatPane.FloatWindow.ShowInTaskbar = false;
-                    _floatHandlersAdded = false;
-                }
+                        _floatHandlersAdded = true;
+                        break;
+                    }
+                case DockState.Document:
+                    {
+                        if (_floatHandlersAdded)
+                        {
+                            DockHandler.FloatPane.FloatWindow.ResizeBegin -= Connection_ResizeBegin;
+                            DockHandler.FloatPane.FloatWindow.ResizeEnd -= Connection_ResizeEnd;
+                            DockHandler.FloatPane.FloatWindow.ShowInTaskbar = false;
+                            _floatHandlersAdded = false;
+
+                            if (DockHandler.FloatPane.FloatWindow.WindowState == FormWindowState.Maximized)
+                                DockHandler.FloatPane.FloatWindow.Close();
+                        }
+
+                        FrmMain.Default.ResizeBegin += Connection_ResizeBegin;
+                        FrmMain.Default.ResizeEnd += Connection_ResizeEnd;
+                        _documentHandlersAdded = true;
+                        break;
+                    }
             }
         }
 
