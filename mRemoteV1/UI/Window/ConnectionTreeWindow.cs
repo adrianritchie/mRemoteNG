@@ -1,4 +1,4 @@
-﻿using mRemoteNG.App;
+using mRemoteNG.App;
 using mRemoteNG.Config.Connections;
 using mRemoteNG.Connection;
 using mRemoteNG.Container;
@@ -106,6 +106,7 @@ namespace mRemoteNG.UI.Window
             //Treelistview needs to be manually themed
             olvConnections.BackColor = _themeManager.ActiveTheme.ExtendedPalette.getColor("TreeView_Background");
             olvConnections.ForeColor = _themeManager.ActiveTheme.ExtendedPalette.getColor("TreeView_Foreground");
+            olvConnections.TreeColumnRenderer.LinePen.Color = _themeManager.ActiveTheme.ExtendedPalette.getColor("TreeView_Foreground");
             olvConnections.SelectedBackColor =
                 _themeManager.ActiveTheme.ExtendedPalette.getColor("Treeview_SelectedItem_Active_Background");
             olvConnections.SelectedForeColor =
